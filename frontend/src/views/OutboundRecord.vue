@@ -14,7 +14,7 @@
       />
     </div>
 
-    <el-table :data="recordList" border style="margin-top: 20px;">
+    <el-table :data="recordList" stripe style="margin-top: 20px; width: 100%">
 <!--      <el-table-column prop="id" label="ID" width="80" />-->
       <el-table-column prop="goodsName" label="货物名称" />
       <el-table-column prop="brand" label="品牌" />

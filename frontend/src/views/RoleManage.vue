@@ -12,7 +12,7 @@
       <el-button type="success" @click="handleAdd">新增角色</el-button>
     </div>
 
-    <el-table :data="tableData" border style="margin-top: 20px">
+    <el-table :data="tableData" stripe style="margin-top: 20px; width: 100%">
       <el-table-column prop="id" label="ID" width="80"></el-table-column>
       <el-table-column prop="roleName" label="角色名称" width="150"></el-table-column>
       <el-table-column prop="roleCode" label="角色代码" width="180"></el-table-column>

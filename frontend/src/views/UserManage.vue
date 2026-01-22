@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="card-container">
     <div class="toolbar">
       <el-input 
         v-model="searchUsername" 
@@ -24,7 +24,7 @@
       <el-button type="success" @click="handleAdd">新增用户</el-button>
     </div>
 
-    <el-table :data="tableData" border style="margin-top: 20px">
+    <el-table :data="tableData" stripe style="margin-top: 20px; width: 100%">
       <el-table-column prop="id" label="ID" width="80"></el-table-column>
       <el-table-column prop="username" label="用户名" width="150"></el-table-column>
       <el-table-column prop="realName" label="真实姓名" width="150"></el-table-column>

@@ -1,26 +1,29 @@
 <template>
-  <div class="goods-manage">
+  <div class="card-container">
     <div class="toolbar">
-      <el-button v-if="!isOutboundStaff" type="primary" @click="showAddDialog">添加货物</el-button>
-      <el-input
-        v-model="searchName"
-        placeholder="搜索货物名称"
-        style="width: 300px; margin-left: 10px;"
-        clearable
-        @clear="loadGoodsList"
-      >
-        <template #append>
-          <el-button @click="handleSearch" :icon="Search">搜索</el-button>
-        </template>
-      </el-input>
+      <el-button v-if="!isOutboundStaff" type="primary" :icon="Plus" @click="showAddDialog">添加货物</el-button>
+      <div class="search-area">
+        <el-input
+          v-model="searchName"
+          placeholder="搜索货物名称"
+          class="search-input"
+          clearable
+          @clear="loadGoodsList"
+          @keyup.enter="handleSearch"
+        >
+          <template #prefix>
+            <el-icon><Search /></el-icon>
+          </template>
+        </el-input>
+        <el-button type="primary" @click="handleSearch">搜索</el-button>
+      </div>
     </div>
 
-    <el-table :data="goodsList" border style="margin-top: 20px;">
-<!--      <el-table-column prop="id" label="ID" width="80" />-->
-      <el-table-column prop="name" label="货物名称" />
-      <el-table-column prop="brand" label="品牌" />
-      <el-table-column prop="model" label="型号" />
-      <el-table-column prop="batch" label="批次" />
+    <el-table :data="goodsList" stripe style="margin-top: 20px; width: 100%">
+      <el-table-column prop="name" label="货物名称" min-width="120" />
+      <el-table-column prop="brand" label="品牌" width="120" />
+      <el-table-column prop="model" label="型号" width="120" />
+      <el-table-column prop="batch" label="批次" width="120" />
       <el-table-column v-if="!isOutboundStaff" prop="unitPrice" label="单价" width="120">
         <template #default="scope">
           {{ scope.row.unitPrice ? '￥' + scope.row.unitPrice : '-' }}
@@ -28,7 +31,7 @@
       </el-table-column>
       <el-table-column prop="stockQuantity" label="库存数量" width="120">
         <template #default="scope">
-          <el-tag :type="scope.row.stockQuantity > 0 ? 'success' : 'danger'">
+          <el-tag :type="scope.row.stockQuantity > 0 ? 'success' : 'danger'" effect="light">
             {{ scope.row.stockQuantity }}
           </el-tag>
         </template>
@@ -38,15 +41,14 @@
           {{ formatDate(scope.row.createTime) }}
         </template>
       </el-table-column>
-      <el-table-column v-if="!isOutboundStaff" label="操作" width="180" fixed="right">
+      <el-table-column v-if="!isOutboundStaff" label="操作" width="150" fixed="right">
         <template #default="scope">
-          <el-button type="primary" size="small" @click="handleEdit(scope.row)">编辑</el-button>
-          <el-button type="danger" size="small" @click="handleDelete(scope.row)">删除</el-button>
+          <el-button type="primary" link size="small" @click="handleEdit(scope.row)">编辑</el-button>
+          <el-button type="danger" link size="small" @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
 
-    <!-- 分页组件 -->
     <el-pagination
       v-model:current-page="pagination.currentPage"
       v-model:page-size="pagination.pageSize"
@@ -55,16 +57,16 @@
       layout="total, sizes, prev, pager, next, jumper"
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
-      style="margin-top: 20px; justify-content: flex-end;"
+      class="pagination-container"
     />
 
-    <!-- 添加/编辑对话框 -->
     <el-dialog 
       v-model="dialogVisible" 
       :title="isEdit ? '编辑货物' : '添加货物'"
       width="500px"
+      destroy-on-close
     >
-      <el-form :model="goodsForm" :rules="rules" ref="formRef" label-width="100px">
+      <el-form :model="goodsForm" :rules="rules" ref="formRef" label-width="80px">
         <el-form-item label="货物名称" prop="name">
           <el-input v-model="goodsForm.name" placeholder="请输入货物名称" />
         </el-form-item>
@@ -78,202 +80,228 @@
           <el-input v-model="goodsForm.batch" placeholder="请输入批次" />
         </el-form-item>
         <el-form-item label="单价" prop="unitPrice">
-          <el-input-number v-model="goodsForm.unitPrice" :precision="2" :min="0" placeholder="请输入单价" />
+          <el-input-number 
+            v-model="goodsForm.unitPrice" 
+            :precision="2" 
+            :min="0" 
+            placeholder="请输入单价" 
+            style="width: 100%" 
+            controls-position="right"
+          />
         </el-form-item>
-<!--        <el-form-item label="库存数量" prop="stockQuantity" v-if="isEdit">-->
-<!--          <el-input-number v-model="goodsForm.stockQuantity" :min="0" />-->
-<!--        </el-form-item>-->
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+        <div class="dialog-footer">
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleSubmit">确定</el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
-import { getGoodsList, addGoods, updateGoods, deleteGoods, searchGoods } from '@/api/goods'
+import { Search, Plus } from '@element-plus/icons-vue'
+import { getGoodsList, addGoods, updateGoods, deleteGoods } from '@/api/goods'
 
 const route = useRoute()
 const currentType = computed(() => route.meta.type || 'device')
 
-// 判断当前用户是否为出库员
-const isOutboundStaff = computed(() => {
-  const userInfo = localStorage.getItem('userInfo')
-  if (userInfo) {
-    const user = JSON.parse(userInfo)
-    return user.roleName === '出库员'
-  }
-  return false
-})
-
+// 状态定义
 const goodsList = ref([])
 const searchName = ref('')
+const loading = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref(null)
 
-// 分页参数
-const pagination = ref({
+const pagination = reactive({
   currentPage: 1,
   pageSize: 20,
   total: 0
 })
 
-const goodsForm = ref({
-  id: null,
+const goodsForm = reactive({
+  id: '',
   name: '',
   brand: '',
   model: '',
   batch: '',
-  unitPrice: null,
+  unitPrice: 0,
   stockQuantity: 0
 })
 
 const rules = {
   name: [{ required: true, message: '请输入货物名称', trigger: 'blur' }],
   brand: [{ required: true, message: '请输入品牌', trigger: 'blur' }],
-  model: [{ required: true, message: '请输入型号', trigger: 'blur' }]
+  model: [{ required: true, message: '请输入型号', trigger: 'blur' }],
+  batch: [{ required: true, message: '请输入批次', trigger: 'blur' }],
+  unitPrice: [{ required: true, message: '请输入单价', trigger: 'blur' }]
 }
 
+// 权限控制
+const isOutboundStaff = computed(() => {
+  const userInfoStr = localStorage.getItem('userInfo')
+  if (userInfoStr) {
+    const userInfo = JSON.parse(userInfoStr)
+    return userInfo.roleName === '出库员' || userInfo.roleName === '销售'
+  }
+  return false
+})
+
+// 获取列表
 const loadGoodsList = async () => {
+  loading.value = true
   try {
-    const res = await getGoodsList({ 
+    const res = await getGoodsList({
       type: currentType.value,
-      current: pagination.value.currentPage,
-      size: pagination.value.pageSize
+      current: pagination.currentPage,
+      size: pagination.pageSize
     })
     if (res.data.records) {
       // 后端分页返回
       goodsList.value = res.data.records
-      pagination.value.total = res.data.total
+      pagination.total = res.data.total
     } else {
       // 兼容旧接口
       goodsList.value = res.data
-      pagination.value.total = res.data.length
+      pagination.total = res.data.length
     }
   } catch (error) {
-    console.error('加载货物列表失败', error)
+    console.error('获取货物列表失败', error)
+  } finally {
+    loading.value = false
   }
+}
+
+// 搜索
+const handleSearch = () => {
+  pagination.currentPage = 1
+  loadGoodsList()
+}
+
+// 分页
+const handleSizeChange = (val) => {
+  pagination.pageSize = val
+  pagination.currentPage = 1
+  loadGoodsList()
+}
+
+const handleCurrentChange = (val) => {
+  pagination.currentPage = val
+  loadGoodsList()
 }
 
 // 监听路由变化，重新加载数据
 watch(() => route.path, () => {
-  pagination.value.currentPage = 1
+  pagination.currentPage = 1
   loadGoodsList()
 }, { immediate: true })
 
-const handleSearch = async () => {
-  if (!searchName.value) {
-    pagination.value.currentPage = 1
-    loadGoodsList()
-    return
-  }
-  try {
-    const res = await searchGoods(searchName.value)
-    goodsList.value = res.data
-    pagination.value.total = res.data.length
-    pagination.value.currentPage = 1
-  } catch (error) {
-    console.error('搜索失败', error)
-  }
-}
-
+// 添加
 const showAddDialog = () => {
   isEdit.value = false
-  goodsForm.value = {
-    id: null,
-    name: '',
-    brand: '',
-    model: '',
-    batch: '',
-    unitPrice: null,
-    type: currentType.value,
-    stockQuantity: 0
-  }
+  resetForm()
   dialogVisible.value = true
 }
 
+// 编辑
 const handleEdit = (row) => {
   isEdit.value = true
-  goodsForm.value = { ...row }
+  Object.assign(goodsForm, row)
   dialogVisible.value = true
 }
 
+// 删除
+const handleDelete = (row) => {
+  ElMessageBox.confirm('确认删除该货物吗？', '警告', {
+    type: 'warning',
+    confirmButtonText: '删除',
+    cancelButtonText: '取消'
+  }).then(async () => {
+    try {
+      const res = await deleteGoods(row.id)
+      if (res.code === 200) {
+        ElMessage.success('删除成功')
+        loadGoodsList()
+      } else {
+        ElMessage.error(res.msg || '删除失败')
+      }
+    } catch (error) {
+      // error
+    }
+  })
+}
+
+// 提交表单
 const handleSubmit = async () => {
   if (!formRef.value) return
   
   await formRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        if (isEdit.value) {
-          await updateGoods(goodsForm.value)
-          ElMessage.success('更新成功')
+        const api = isEdit.value ? updateGoods : addGoods
+        const res = await api(goodsForm)
+        
+        if (res.code === 200) {
+          ElMessage.success(isEdit.value ? '更新成功' : '添加成功')
+          dialogVisible.value = false
+          loadGoodsList()
         } else {
-          await addGoods(goodsForm.value)
-          ElMessage.success('添加成功')
+          ElMessage.error(res.msg || '操作失败')
         }
-        dialogVisible.value = false
-        loadGoodsList()
       } catch (error) {
-        console.error('提交失败', error)
+        // error
       }
     }
   })
 }
 
-const handleDelete = (row) => {
-  ElMessageBox.confirm('确定要删除该货物吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async () => {
-    try {
-      await deleteGoods(row.id)
-      ElMessage.success('删除成功')
-      loadGoodsList()
-    } catch (error) {
-      console.error('删除失败', error)
-    }
-  })
+// 重置表单
+const resetForm = () => {
+  goodsForm.id = ''
+  goodsForm.name = ''
+  goodsForm.brand = ''
+  goodsForm.model = ''
+  goodsForm.batch = ''
+  goodsForm.unitPrice = 0
+  goodsForm.stockQuantity = 0
 }
 
-const formatDate = (date) => {
-  if (!date) return ''
-  const d = new Date(date)
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  const hour = String(d.getHours()).padStart(2, '0')
-  const minute = String(d.getMinutes()).padStart(2, '0')
-  const second = String(d.getSeconds()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hour}:${minute}:${second}`
+// 日期格式化
+const formatDate = (time) => {
+  if (!time) return '-'
+  return new Date(time).toLocaleString()
 }
 
-const handleSizeChange = (val) => {
-  pagination.value.pageSize = val
-  pagination.value.currentPage = 1
-  loadGoodsList()
-}
-
-const handleCurrentChange = (val) => {
-  pagination.value.currentPage = val
-  loadGoodsList()
-}
+onMounted(() => {
+  // watch会自动加载，无需重复调用
+  // loadGoodsList()
+})
 </script>
 
 <style scoped>
-.goods-manage {
-  padding: 20px;
-}
-
 .toolbar {
   display: flex;
+  justify-content: space-between;
   align-items: center;
+  margin-bottom: 24px;
+}
+
+.search-area {
+  display: flex;
+  gap: 12px;
+}
+
+.search-input {
+  width: 300px;
+}
+
+.pagination-container {
+  margin-top: 24px;
+  justify-content: flex-end;
 }
 </style>
