@@ -16,9 +16,9 @@
 
     <el-table :data="recordList" stripe style="margin-top: 20px; width: 100%">
 <!--      <el-table-column prop="id" label="ID" width="80" />-->
-      <el-table-column prop="goodsName" label="货物名称" />
-      <el-table-column prop="brand" label="品牌" />
-      <el-table-column prop="model" label="型号" />
+      <el-table-column prop="goodsName" label="货物名称" min-width="150" show-overflow-tooltip />
+      <el-table-column prop="brand" label="品牌" width="120" show-overflow-tooltip />
+      <el-table-column prop="model" label="型号" width="120" show-overflow-tooltip />
       <el-table-column prop="quantity" label="入库数量" width="120">
         <template #default="scope">
           <el-tag type="success">{{ scope.row.quantity }}</el-tag>

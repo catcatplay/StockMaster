@@ -20,10 +20,10 @@
     </div>
 
     <el-table :data="goodsList" stripe style="margin-top: 20px; width: 100%">
-      <el-table-column prop="name" label="货物名称" min-width="120" />
-      <el-table-column prop="brand" label="品牌" width="120" />
-      <el-table-column prop="model" label="型号" width="120" />
-      <el-table-column prop="batch" label="批次" width="120" />
+      <el-table-column prop="name" label="货物名称" min-width="150" show-overflow-tooltip />
+      <el-table-column prop="brand" label="品牌" width="120" show-overflow-tooltip />
+      <el-table-column prop="model" label="型号" width="120" show-overflow-tooltip />
+      <el-table-column prop="batch" label="批次" width="120" show-overflow-tooltip />
       <el-table-column v-if="!isOutboundStaff" prop="unitPrice" label="单价" width="120">
         <template #default="scope">
           {{ scope.row.unitPrice ? '￥' + scope.row.unitPrice : '-' }}

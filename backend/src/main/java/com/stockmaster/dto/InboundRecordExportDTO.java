@@ -34,12 +34,20 @@ public class InboundRecordExportDTO {
     @ColumnWidth(12)
     private Integer quantity;
     
-    @ExcelProperty(value = "入库时间", index = 4)
+    @ExcelProperty(value = "入库人", index = 4)
+    @ColumnWidth(15)
+    private String inboundUser;
+    
+    @ExcelProperty(value = "结算状态", index = 5)
+    @ColumnWidth(12)
+    private String settlementStatus;
+    
+    @ExcelProperty(value = "备注", index = 6)
+    @ColumnWidth(30)
+    private String remark;
+    
+    @ExcelProperty(value = "入库时间", index = 7)
     @DateTimeFormat("yyyy-MM-dd HH:mm:ss")
     @ColumnWidth(20)
     private LocalDateTime inboundTime;
-    
-    @ExcelProperty(value = "备注", index = 5)
-    @ColumnWidth(30)
-    private String remark;
 }

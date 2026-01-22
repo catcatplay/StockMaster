@@ -5,8 +5,13 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.stockmaster.entity.Goods;
+import com.stockmaster.entity.InboundRecord;
+import com.stockmaster.entity.OutboundRecord;
 import com.stockmaster.mapper.GoodsMapper;
+import com.stockmaster.mapper.InboundRecordMapper;
+import com.stockmaster.mapper.OutboundRecordMapper;
 import com.stockmaster.service.GoodsService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,6 +21,12 @@ import java.util.List;
  */
 @Service
 public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements GoodsService {
+
+    @Autowired
+    private InboundRecordMapper inboundRecordMapper;
+
+    @Autowired
+    private OutboundRecordMapper outboundRecordMapper;
 
     @Override
     public boolean addGoods(Goods goods) {
@@ -32,6 +43,22 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
 
     @Override
     public boolean deleteGoods(Long id) {
+        // 校验是否存在入库记录
+        LambdaQueryWrapper<InboundRecord> inboundWrapper = new LambdaQueryWrapper<>();
+        inboundWrapper.eq(InboundRecord::getGoodsId, id);
+        Integer inboundCount = inboundRecordMapper.selectCount(inboundWrapper);
+        if (inboundCount > 0) {
+            throw new RuntimeException("该货物存在入库记录，不允许删除");
+        }
+
+        // 校验是否存在出库记录
+        LambdaQueryWrapper<OutboundRecord> outboundWrapper = new LambdaQueryWrapper<>();
+        outboundWrapper.eq(OutboundRecord::getGoodsId, id);
+        Integer outboundCount = outboundRecordMapper.selectCount(outboundWrapper);
+        if (outboundCount > 0) {
+            throw new RuntimeException("该货物存在出库记录，不允许删除");
+        }
+
         return this.removeById(id);
     }
 
