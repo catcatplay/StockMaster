@@ -69,7 +69,7 @@
             >
               <span style="float: left">{{ item.name }}</span>
               <span style="float: right; color: #8492a6; font-size: 13px">
-                库存: {{ item.stockQuantity }}
+                库存: {{ item.remainingStock }}
               </span>
             </el-option>
           </el-select>
@@ -253,9 +253,9 @@ const showOutboundDialog = () => {
 const handleGoodsChange = (goodsId) => {
   const goods = goodsList.value.find(g => g.id === goodsId)
   if (goods) {
-    currentStock.value = goods.stockQuantity
+    currentStock.value = goods.remainingStock
     // 如果当前数量超过库存，重置为1
-    if (outboundForm.value.quantity > goods.stockQuantity) {
+    if (outboundForm.value.quantity > goods.remainingStock) {
       outboundForm.value.quantity = 1
     }
     // 触发数量字段的验证

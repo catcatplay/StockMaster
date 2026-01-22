@@ -24,7 +24,9 @@ public class GoodsDTO implements Serializable {
     
     private String type;
     
-    private Integer stockQuantity;
+    private Integer remainingStock;  // 剩余库存
+    
+    private Integer totalStock;  // 总库存
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createTime;

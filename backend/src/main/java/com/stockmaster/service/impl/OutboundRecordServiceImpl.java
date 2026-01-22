@@ -35,8 +35,8 @@ public class OutboundRecordServiceImpl extends ServiceImpl<OutboundRecordMapper,
         }
         
         // 检查库存是否充足
-        if (goods.getStockQuantity() < record.getQuantity()) {
-            throw new RuntimeException("库存不足，当前库存：" + goods.getStockQuantity());
+        if (goods.getRemainingStock() < record.getQuantity()) {
+            throw new RuntimeException("库存不足，当前剩余库存：" + goods.getRemainingStock());
         }
         
         // 填充货物信息

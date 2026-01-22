@@ -29,10 +29,17 @@
           {{ scope.row.unitPrice ? '￥' + scope.row.unitPrice : '-' }}
         </template>
       </el-table-column>
-      <el-table-column prop="stockQuantity" label="库存数量" width="120">
+      <el-table-column prop="totalStock" label="总库存" width="100">
         <template #default="scope">
-          <el-tag :type="scope.row.stockQuantity > 0 ? 'success' : 'danger'" effect="light">
-            {{ scope.row.stockQuantity }}
+          <el-tag type="info" effect="plain">
+            {{ scope.row.totalStock || 0 }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="remainingStock" label="剩余库存" width="100">
+        <template #default="scope">
+          <el-tag :type="scope.row.remainingStock > 0 ? 'success' : 'danger'" effect="light">
+            {{ scope.row.remainingStock || 0 }}
           </el-tag>
         </template>
       </el-table-column>
@@ -131,7 +138,8 @@ const goodsForm = reactive({
   model: '',
   batch: '',
   unitPrice: 0,
-  stockQuantity: 0
+  remainingStock: 0,
+  totalStock: 0
 })
 
 const rules = {
@@ -268,7 +276,8 @@ const resetForm = () => {
   goodsForm.model = ''
   goodsForm.batch = ''
   goodsForm.unitPrice = 0
-  goodsForm.stockQuantity = 0
+  goodsForm.remainingStock = 0
+  goodsForm.totalStock = 0
 }
 
 // 日期格式化

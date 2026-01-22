@@ -1,6 +1,7 @@
 package com.stockmaster.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
@@ -31,7 +32,10 @@ public class Goods implements Serializable {
     
     private String type;
     
-    private Integer stockQuantity;
+    @TableField("stock_quantity")
+    private Integer remainingStock;  // 剩余库存
+    
+    private Integer totalStock;  // 总库存
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createTime;

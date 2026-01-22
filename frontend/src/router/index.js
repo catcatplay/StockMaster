@@ -6,6 +6,7 @@ import InboundRecord from '../views/InboundRecord.vue'
 import OutboundRecord from '../views/OutboundRecord.vue'
 import RoleManage from '../views/RoleManage.vue'
 import UserManage from '../views/UserManage.vue'
+import Profile from '../views/Profile.vue'
 
 const routes = [
   {
@@ -68,6 +69,12 @@ const routes = [
     name: 'UserManage',
     component: UserManage,
     meta: { requiresAuth: true, permission: 'user' }
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: Profile,
+    meta: { requiresAuth: true }
   }
 ]
 

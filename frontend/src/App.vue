@@ -161,6 +161,8 @@ const hasPermission = (permission) => {
 const handleCommand = (command) => {
   if (command === 'logout') {
     handleLogout()
+  } else if (command === 'profile') {
+    router.push('/profile')
   }
 }
 

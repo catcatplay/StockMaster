@@ -82,7 +82,7 @@
             >
               <span style="float: left">{{ item.name }}</span>
               <span style="float: right; color: #8492a6; font-size: 13px">
-                当前库存: {{ item.stockQuantity }}
+                当前剩余库存: {{ item.remainingStock }}
               </span>
             </el-option>
           </el-select>
@@ -274,7 +274,7 @@ const showInboundDialog = () => {
 const handleGoodsChange = (goodsId) => {
   const goods = goodsList.value.find(g => g.id === goodsId)
   if (goods) {
-    currentStock.value = goods.stockQuantity
+    currentStock.value = goods.remainingStock
   }
 }
 

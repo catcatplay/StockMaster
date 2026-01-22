@@ -30,8 +30,11 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
 
     @Override
     public boolean addGoods(Goods goods) {
-        if (goods.getStockQuantity() == null) {
-            goods.setStockQuantity(0);
+        if (goods.getRemainingStock() == null) {
+            goods.setRemainingStock(0);
+        }
+        if (goods.getTotalStock() == null) {
+            goods.setTotalStock(0);
         }
         return this.save(goods);
     }
@@ -92,7 +95,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
         if (goods == null) {
             return false;
         }
-        goods.setStockQuantity(goods.getStockQuantity() + quantity);
+        goods.setRemainingStock(goods.getRemainingStock() + quantity);
         return this.updateById(goods);
     }
     
