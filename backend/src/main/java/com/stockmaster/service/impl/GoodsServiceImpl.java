@@ -95,7 +95,17 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
         if (goods == null) {
             return false;
         }
-        goods.setRemainingStock(goods.getRemainingStock() + quantity);
+        
+        // 更新剩余库存
+        Integer currentRemaining = goods.getRemainingStock() != null ? goods.getRemainingStock() : 0;
+        goods.setRemainingStock(currentRemaining + quantity);
+        
+        // 如果是入库（数量增加），同时也增加总库存
+        if (quantity > 0) {
+            Integer currentTotal = goods.getTotalStock() != null ? goods.getTotalStock() : 0;
+            goods.setTotalStock(currentTotal + quantity);
+        }
+        
         return this.updateById(goods);
     }
     
