@@ -56,4 +56,9 @@ public interface GoodsService extends IService<Goods> {
      * 分页查询货物
      */
     IPage<Goods> getGoodsPage(Page<Goods> page, String type, String name);
+
+    /**
+     * 获取指定类型的货物总剩余库存
+     */
+    Integer getTotalStock(String type);
 }

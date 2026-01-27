@@ -1,6 +1,7 @@
 package com.stockmaster.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -11,9 +12,9 @@ import com.stockmaster.mapper.GoodsMapper;
 import com.stockmaster.mapper.InboundRecordMapper;
 import com.stockmaster.mapper.OutboundRecordMapper;
 import com.stockmaster.service.GoodsService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
 import java.util.List;
 
 /**
@@ -22,11 +23,13 @@ import java.util.List;
 @Service
 public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements GoodsService {
 
-    @Autowired
+    @Resource
     private InboundRecordMapper inboundRecordMapper;
 
-    @Autowired
+    @Resource
     private OutboundRecordMapper outboundRecordMapper;
+    @Resource
+    private GoodsMapper goodsMapper;
 
     @Override
     public boolean addGoods(Goods goods) {
@@ -91,24 +94,42 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
 
     @Override
     public boolean updateStockQuantity(Long id, Integer quantity) {
-        Goods goods = this.getById(id);
-        if (goods == null) {
-            return false;
+        final int maxRetries = 3;
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            Goods goods = getById(id);
+            if (goods == null) {
+                return false;
+            }
+
+            int remaining = goods.getRemainingStock() != null ? goods.getRemainingStock() : 0;
+            int newRemaining = remaining + quantity;
+
+            // 出库校验
+            if (quantity < 0 && newRemaining < 0) {
+                throw new RuntimeException("库存不足，无法出库");
+            }
+
+            LambdaUpdateWrapper<Goods> wrapper = new LambdaUpdateWrapper<>();
+            wrapper.eq(Goods::getId, id)
+                    .eq(Goods::getRemainingStock, goods.getRemainingStock())
+                    .set(Goods::getRemainingStock, newRemaining);
+
+            // 入库才增加总库存
+            if (quantity > 0) {
+                int total = goods.getTotalStock() != null ? goods.getTotalStock() : 0;
+                wrapper.set(Goods::getTotalStock, total + quantity);
+            }
+
+            if (this.update(wrapper)) {
+                return true;
+            }
         }
-        
-        // 更新剩余库存
-        Integer currentRemaining = goods.getRemainingStock() != null ? goods.getRemainingStock() : 0;
-        goods.setRemainingStock(currentRemaining + quantity);
-        
-        // 如果是入库（数量增加），同时也增加总库存
-        if (quantity > 0) {
-            Integer currentTotal = goods.getTotalStock() != null ? goods.getTotalStock() : 0;
-            goods.setTotalStock(currentTotal + quantity);
-        }
-        
-        return this.updateById(goods);
+
+        throw new RuntimeException("系统繁忙，库存更新失败，请重试");
     }
-    
+
+
     @Override
     public IPage<Goods> getGoodsPage(Page<Goods> page, String type, String name) {
         LambdaQueryWrapper<Goods> wrapper = new LambdaQueryWrapper<>();
@@ -120,5 +141,10 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
         }
         wrapper.orderByDesc(Goods::getCreateTime);
         return this.page(page, wrapper);
+    }
+
+    @Override
+    public Integer getTotalStock(String type) {
+        return goodsMapper.sumTotalStock(type);
     }
 }

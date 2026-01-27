@@ -1,7 +1,10 @@
 <template>
   <div class="card-container">
     <div class="toolbar">
-      <el-button v-if="!isOutboundStaff" type="primary" :icon="Plus" @click="showAddDialog">添加货物</el-button>
+      <div class="toolbar-left">
+        <el-button v-if="!isOutboundStaff" type="primary" :icon="Plus" @click="showAddDialog">添加货物</el-button>
+        <span class="stock-count-text">所有货物库存总数：<span class="count-number">{{ totalStockCount }}</span></span>
+      </div>
       <div class="search-area">
         <el-input
           v-model="searchName"
@@ -93,7 +96,7 @@ import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Plus } from '@element-plus/icons-vue'
-import { getGoodsList, addGoods, updateGoods, deleteGoods } from '@/api/goods'
+import { getGoodsList, addGoods, updateGoods, deleteGoods, getGoodsStockCount } from '@/api/goods'
 
 const route = useRoute()
 const currentType = computed(() => route.meta.type || 'device')
@@ -105,6 +108,7 @@ const loading = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref(null)
+const totalStockCount = ref(0)
 
 const pagination = reactive({
   currentPage: 1,
@@ -165,6 +169,18 @@ const loadGoodsList = async () => {
   }
 }
 
+// 获取总库存数量
+const loadStockCount = async () => {
+  try {
+    const res = await getGoodsStockCount(currentType.value)
+    if (res.code === 200) {
+      totalStockCount.value = res.data
+    }
+  } catch (error) {
+    console.error('获取库存统计失败', error)
+  }
+}
+
 // 搜索
 const handleSearch = () => {
   pagination.currentPage = 1
@@ -187,6 +203,7 @@ const handleCurrentChange = (val) => {
 watch(() => route.path, () => {
   pagination.currentPage = 1
   loadGoodsList()
+  loadStockCount()
 }, { immediate: true })
 
 // 添加
@@ -215,6 +232,7 @@ const handleDelete = (row) => {
       if (res.code === 200) {
         ElMessage.success('删除成功')
         loadGoodsList()
+        loadStockCount()
       } else {
         ElMessage.error(res.msg || '删除失败')
       }
@@ -240,6 +258,7 @@ const handleSubmit = async () => {
           ElMessage.success(isEdit.value ? '更新成功' : '添加成功')
           dialogVisible.value = false
           loadGoodsList()
+          loadStockCount()
         } else {
           ElMessage.error(res.msg || '操作失败')
         }
@@ -280,6 +299,23 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 24px;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stock-count-text {
+  font-size: 14px;
+  color: #606266;
+}
+
+.count-number {
+  font-size: 16px;
+  font-weight: bold;
+  color: #409EFF;
 }
 
 .search-area {

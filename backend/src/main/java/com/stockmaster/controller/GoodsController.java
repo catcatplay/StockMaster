@@ -188,4 +188,17 @@ public class GoodsController {
             return Result.error("查询失败：" + e.getMessage());
         }
     }
+
+    /**
+     * 获取指定类型的货物总库存
+     */
+    @GetMapping("/stock-count")
+    public Result<Integer> getStockCount(@RequestParam String type) {
+        try {
+            Integer count = goodsService.getTotalStock(type);
+            return Result.success(count);
+        } catch (Exception e) {
+            return Result.error("查询失败：" + e.getMessage());
+        }
+    }
 }

@@ -9,10 +9,10 @@ import com.stockmaster.entity.InboundRecord;
 import com.stockmaster.mapper.InboundRecordMapper;
 import com.stockmaster.service.GoodsService;
 import com.stockmaster.service.InboundRecordService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.annotation.Resource;
 import java.util.Date;
 import java.util.List;
 
@@ -22,7 +22,7 @@ import java.util.List;
 @Service
 public class InboundRecordServiceImpl extends ServiceImpl<InboundRecordMapper, InboundRecord> implements InboundRecordService {
 
-    @Autowired
+    @Resource
     private GoodsService goodsService;
 
     @Override

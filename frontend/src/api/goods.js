@@ -40,3 +40,11 @@ export function searchGoods(name) {
     params: { name }
   })
 }
+
+export function getGoodsStockCount(type) {
+  return request({
+    url: '/goods/stock-count',
+    method: 'get',
+    params: { type }
+  })
+}
