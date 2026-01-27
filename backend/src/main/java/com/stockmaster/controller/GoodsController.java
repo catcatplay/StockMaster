@@ -118,12 +118,12 @@ public class GoodsController {
             }
             
             // 如果是出库员，过滤掉单价字段
-            if (isOutboundStaff(request)) {
-                List<GoodsDTO> dtoList = list.stream()
-                    .map(this::convertToDTO)
-                    .collect(Collectors.toList());
-                return Result.success(dtoList);
-            }
+//            if (isOutboundStaff(request)) {
+//                List<GoodsDTO> dtoList = list.stream()
+//                    .map(this::convertToDTO)
+//                    .collect(Collectors.toList());
+//                return Result.success(dtoList);
+//            }
             
             return Result.success(list);
         } catch (Exception e) {
@@ -139,10 +139,11 @@ public class GoodsController {
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "20") Integer size,
             @RequestParam(required = false) String type,
+            @RequestParam(required = false) String name,
             HttpServletRequest request) {
         try {
             Page<Goods> page = new Page<>(current, size);
-            IPage<Goods> goodsPage = goodsService.getGoodsPage(page, type);
+            IPage<Goods> goodsPage = goodsService.getGoodsPage(page, type, name);
             
             Map<String, Object> result = new HashMap<>();
             

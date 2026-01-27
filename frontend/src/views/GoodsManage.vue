@@ -20,15 +20,9 @@
     </div>
 
     <el-table :data="goodsList" stripe style="margin-top: 20px; width: 100%">
-      <el-table-column prop="name" label="货物名称" min-width="150" show-overflow-tooltip />
-      <el-table-column prop="brand" label="品牌" width="120" show-overflow-tooltip />
-      <el-table-column prop="model" label="型号" width="120" show-overflow-tooltip />
-      <el-table-column prop="batch" label="批次" width="120" show-overflow-tooltip />
-      <el-table-column v-if="!isOutboundStaff" prop="unitPrice" label="单价" width="120">
-        <template #default="scope">
-          {{ scope.row.unitPrice ? '￥' + scope.row.unitPrice : '-' }}
-        </template>
-      </el-table-column>
+      <el-table-column prop="name" label="货物名称" min-width="100" show-overflow-tooltip />
+      <el-table-column prop="brand" label="品牌" min-width="100" show-overflow-tooltip />
+      <el-table-column prop="model" label="型号" min-width="150" show-overflow-tooltip />
       <el-table-column prop="totalStock" label="总库存" width="100">
         <template #default="scope">
           <el-tag type="info" effect="plain">
@@ -83,19 +77,6 @@
         <el-form-item label="型号" prop="model">
           <el-input v-model="goodsForm.model" placeholder="请输入型号" />
         </el-form-item>
-        <el-form-item label="批次" prop="batch">
-          <el-input v-model="goodsForm.batch" placeholder="请输入批次" />
-        </el-form-item>
-        <el-form-item label="单价" prop="unitPrice">
-          <el-input-number 
-            v-model="goodsForm.unitPrice" 
-            :precision="2" 
-            :min="0" 
-            placeholder="请输入单价" 
-            style="width: 100%" 
-            controls-position="right"
-          />
-        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -145,9 +126,7 @@ const goodsForm = reactive({
 const rules = {
   name: [{ required: true, message: '请输入货物名称', trigger: 'blur' }],
   brand: [{ required: true, message: '请输入品牌', trigger: 'blur' }],
-  model: [{ required: true, message: '请输入型号', trigger: 'blur' }],
-  batch: [{ required: true, message: '请输入批次', trigger: 'blur' }],
-  unitPrice: [{ required: true, message: '请输入单价', trigger: 'blur' }]
+  model: [{ required: true, message: '请输入型号', trigger: 'blur' }]
 }
 
 // 权限控制
@@ -167,7 +146,8 @@ const loadGoodsList = async () => {
     const res = await getGoodsList({
       type: currentType.value,
       current: pagination.currentPage,
-      size: pagination.pageSize
+      size: pagination.pageSize,
+      name: searchName.value
     })
     if (res.data.records) {
       // 后端分页返回
@@ -252,7 +232,9 @@ const handleSubmit = async () => {
     if (valid) {
       try {
         const api = isEdit.value ? updateGoods : addGoods
-        const res = await api(goodsForm)
+        // 确保传入type
+        const payload = { ...goodsForm, type: currentType.value }
+        const res = await api(payload)
         
         if (res.code === 200) {
           ElMessage.success(isEdit.value ? '更新成功' : '添加成功')

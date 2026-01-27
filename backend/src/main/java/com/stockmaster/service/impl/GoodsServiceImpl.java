@@ -110,10 +110,13 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
     }
     
     @Override
-    public IPage<Goods> getGoodsPage(Page<Goods> page, String type) {
+    public IPage<Goods> getGoodsPage(Page<Goods> page, String type, String name) {
         LambdaQueryWrapper<Goods> wrapper = new LambdaQueryWrapper<>();
         if (type != null && !type.isEmpty()) {
             wrapper.eq(Goods::getType, type);
+        }
+        if (name != null && !name.isEmpty()) {
+            wrapper.like(Goods::getName, name);
         }
         wrapper.orderByDesc(Goods::getCreateTime);
         return this.page(page, wrapper);
