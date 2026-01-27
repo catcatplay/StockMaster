@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 public class OutboundRecordExportDTO {
     
     @ExcelProperty(value = "货物名称", index = 0)
-    @ColumnWidth(20)
+    @ColumnWidth(15)
     private String goodsName;
     
     @ExcelProperty(value = "品牌", index = 1)
@@ -26,7 +26,7 @@ public class OutboundRecordExportDTO {
     private String brand;
     
     @ExcelProperty(value = "型号", index = 2)
-    @ColumnWidth(15)
+    @ColumnWidth(30)
     private String model;
     
     @ExcelProperty(value = "出库数量", index = 3)
