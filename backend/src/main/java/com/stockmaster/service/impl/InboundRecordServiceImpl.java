@@ -26,6 +26,22 @@ public class InboundRecordServiceImpl extends ServiceImpl<InboundRecordMapper, I
     private GoodsService goodsService;
 
     @Override
+    public List<InboundRecord> getRecordsList(String type, Date startTime, Date endTime) {
+        LambdaQueryWrapper<InboundRecord> wrapper = new LambdaQueryWrapper<>();
+        if (type != null && !type.isEmpty()) {
+            wrapper.eq(InboundRecord::getType, type);
+        }
+        if (startTime != null) {
+            wrapper.ge(InboundRecord::getInboundTime, startTime);
+        }
+        if (endTime != null) {
+            wrapper.le(InboundRecord::getInboundTime, endTime);
+        }
+        wrapper.orderByDesc(InboundRecord::getInboundTime);
+        return this.list(wrapper);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean createInboundRecord(InboundRecord record) {
         // 查询货物信息
@@ -102,10 +118,16 @@ public class InboundRecordServiceImpl extends ServiceImpl<InboundRecordMapper, I
     }
     
     @Override
-    public IPage<InboundRecord> getRecordsPage(Page<InboundRecord> page, String type) {
+    public IPage<InboundRecord> getRecordsPage(Page<InboundRecord> page, String type, Date startTime, Date endTime) {
         LambdaQueryWrapper<InboundRecord> wrapper = new LambdaQueryWrapper<>();
         if (type != null && !type.isEmpty()) {
             wrapper.eq(InboundRecord::getType, type);
+        }
+        if (startTime != null) {
+            wrapper.ge(InboundRecord::getInboundTime, startTime);
+        }
+        if (endTime != null) {
+            wrapper.le(InboundRecord::getInboundTime, endTime);
         }
         wrapper.orderByDesc(InboundRecord::getInboundTime);
         return this.page(page, wrapper);

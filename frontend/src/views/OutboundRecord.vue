@@ -127,7 +127,7 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getOutboundList, createOutbound, getOutboundByTime } from '@/api/outbound'
+import { getOutboundList, createOutbound } from '@/api/outbound'
 import { getGoodsList } from '@/api/goods'
 import request from '@/utils/request'
 
@@ -181,11 +181,18 @@ const rules = {
 
 const loadRecordList = async () => {
   try {
-    const res = await getOutboundList({ 
+    const params = {
       type: currentType.value,
       current: pagination.value.currentPage,
       size: pagination.value.pageSize
-    })
+    }
+
+    if (dateRange.value && dateRange.value.length === 2) {
+      params.startTime = formatDateForApi(dateRange.value[0])
+      params.endTime = formatDateForApi(dateRange.value[1])
+    }
+
+    const res = await getOutboundList(params)
     if (res.data.records) {
       // 后端分页返回
       recordList.value = res.data.records
@@ -217,20 +224,8 @@ watch(() => route.path, () => {
 }, { immediate: true })
 
 const handleDateChange = async () => {
-  if (dateRange.value && dateRange.value.length === 2) {
-    try {
-      const startTime = formatDateForApi(dateRange.value[0])
-      const endTime = formatDateForApi(dateRange.value[1])
-      const res = await getOutboundByTime(startTime, endTime)
-      recordList.value = res.data
-      pagination.value.total = res.data.length
-      pagination.value.currentPage = 1
-    } catch (error) {
-      console.error('查询失败', error)
-    }
-  } else {
-    loadRecordList()
-  }
+  pagination.value.currentPage = 1
+  loadRecordList()
 }
 
 const showOutboundDialog = () => {

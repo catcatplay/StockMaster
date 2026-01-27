@@ -39,6 +39,11 @@ public interface OutboundRecordService extends IService<OutboundRecord> {
     List<OutboundRecord> getRecordsByTimeRange(Date startTime, Date endTime);
     
     /**
+     * 根据条件查询出库记录列表
+     */
+    List<OutboundRecord> getRecordsList(String type, Date startTime, Date endTime);
+    
+    /**
      * 统计货物总出库量
      */
     Integer getTotalOutboundQuantityByGoodsId(Long goodsId);
@@ -46,5 +51,5 @@ public interface OutboundRecordService extends IService<OutboundRecord> {
     /**
      * 分页查询出库记录
      */
-    IPage<OutboundRecord> getRecordsPage(Page<OutboundRecord> page, String type);
+    IPage<OutboundRecord> getRecordsPage(Page<OutboundRecord> page, String type, Date startTime, Date endTime);
 }

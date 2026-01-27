@@ -83,10 +83,12 @@ public class OutboundRecordController {
     public Result<Map<String, Object>> getRecordsPage(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "20") Integer size,
-            @RequestParam(required = false) String type) {
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date startTime,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date endTime) {
         try {
             Page<OutboundRecord> page = new Page<>(current, size);
-            IPage<OutboundRecord> recordPage = outboundRecordService.getRecordsPage(page, type);
+            IPage<OutboundRecord> recordPage = outboundRecordService.getRecordsPage(page, type, startTime, endTime);
             
             Map<String, Object> result = new HashMap<>();
             result.put("records", recordPage.getRecords());
@@ -152,27 +154,7 @@ public class OutboundRecordController {
             HttpServletResponse response) throws IOException {
         try {
             // 查询数据
-            List<OutboundRecord> records;
-            if (type != null && !type.isEmpty()) {
-                // 根据type过滤
-                records = outboundRecordService.getRecordsByType(type);
-                // 如果有时间范围，进一步过滤
-                if (startTime != null || endTime != null) {
-                    final Date finalStartTime = startTime;
-                    final Date finalEndTime = endTime;
-                    records = records.stream()
-                        .filter(record -> {
-                            if (record.getOutboundTime() == null) return false;
-                            Date recordTime = java.sql.Timestamp.valueOf(record.getOutboundTime());
-                            if (finalStartTime != null && recordTime.before(finalStartTime)) return false;
-                            if (finalEndTime != null && recordTime.after(finalEndTime)) return false;
-                            return true;
-                        })
-                        .collect(Collectors.toList());
-                }
-            } else {
-                records = outboundRecordService.getRecordsByTimeRange(startTime, endTime);
-            }
+            List<OutboundRecord> records = outboundRecordService.getRecordsList(type, startTime, endTime);
             
             // 转换为导出DTO
             List<OutboundRecordExportDTO> exportList = records.stream().map(record -> {

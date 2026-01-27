@@ -39,6 +39,11 @@ public interface InboundRecordService extends IService<InboundRecord> {
     List<InboundRecord> getRecordsByTimeRange(Date startTime, Date endTime);
     
     /**
+     * 根据条件查询入库记录列表
+     */
+    List<InboundRecord> getRecordsList(String type, Date startTime, Date endTime);
+    
+    /**
      * 更新结算状态
      */
     boolean updateSettlementStatus(Long id, String settlementStatus, String remark);
@@ -46,5 +51,5 @@ public interface InboundRecordService extends IService<InboundRecord> {
     /**
      * 分页查询入库记录
      */
-    IPage<InboundRecord> getRecordsPage(Page<InboundRecord> page, String type);
+    IPage<InboundRecord> getRecordsPage(Page<InboundRecord> page, String type, Date startTime, Date endTime);
 }

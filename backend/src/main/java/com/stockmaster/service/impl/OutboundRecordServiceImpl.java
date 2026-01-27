@@ -93,6 +93,22 @@ public class OutboundRecordServiceImpl extends ServiceImpl<OutboundRecordMapper,
     }
 
     @Override
+    public List<OutboundRecord> getRecordsList(String type, Date startTime, Date endTime) {
+        LambdaQueryWrapper<OutboundRecord> wrapper = new LambdaQueryWrapper<>();
+        if (type != null && !type.isEmpty()) {
+            wrapper.eq(OutboundRecord::getType, type);
+        }
+        if (startTime != null) {
+            wrapper.ge(OutboundRecord::getOutboundTime, startTime);
+        }
+        if (endTime != null) {
+            wrapper.le(OutboundRecord::getOutboundTime, endTime);
+        }
+        wrapper.orderByDesc(OutboundRecord::getOutboundTime);
+        return this.list(wrapper);
+    }
+
+    @Override
     public Integer getTotalOutboundQuantityByGoodsId(Long goodsId) {
         LambdaQueryWrapper<OutboundRecord> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(OutboundRecord::getGoodsId, goodsId);
@@ -104,10 +120,16 @@ public class OutboundRecordServiceImpl extends ServiceImpl<OutboundRecordMapper,
     }
     
     @Override
-    public IPage<OutboundRecord> getRecordsPage(Page<OutboundRecord> page, String type) {
+    public IPage<OutboundRecord> getRecordsPage(Page<OutboundRecord> page, String type, Date startTime, Date endTime) {
         LambdaQueryWrapper<OutboundRecord> wrapper = new LambdaQueryWrapper<>();
         if (type != null && !type.isEmpty()) {
             wrapper.eq(OutboundRecord::getType, type);
+        }
+        if (startTime != null) {
+            wrapper.ge(OutboundRecord::getOutboundTime, startTime);
+        }
+        if (endTime != null) {
+            wrapper.le(OutboundRecord::getOutboundTime, endTime);
         }
         wrapper.orderByDesc(OutboundRecord::getOutboundTime);
         return this.page(page, wrapper);
