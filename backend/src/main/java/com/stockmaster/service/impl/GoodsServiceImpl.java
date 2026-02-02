@@ -139,12 +139,25 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
         if (name != null && !name.isEmpty()) {
             wrapper.like(Goods::getName, name);
         }
-        wrapper.orderByDesc(Goods::getCreateTime);
+        wrapper.orderByDesc(Goods::getTotalStock);
         return this.page(page, wrapper);
     }
 
     @Override
     public Integer getTotalStock(String type) {
         return goodsMapper.sumTotalStock(type);
+    }
+
+    @Override
+    public List<Goods> getGoodsList(String type, String name) {
+        LambdaQueryWrapper<Goods> wrapper = new LambdaQueryWrapper<>();
+        if (type != null && !type.isEmpty()) {
+            wrapper.eq(Goods::getType, type);
+        }
+        if (name != null && !name.isEmpty()) {
+            wrapper.like(Goods::getName, name);
+        }
+        wrapper.orderByDesc(Goods::getTotalStock);
+        return this.list(wrapper);
     }
 }

@@ -1,9 +1,12 @@
 package com.stockmaster.controller;
 
+import com.alibaba.excel.EasyExcel;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.stockmaster.common.Result;
+import com.stockmaster.config.ExcelStyleConfig;
 import com.stockmaster.dto.GoodsDTO;
+import com.stockmaster.dto.GoodsExportDTO;
 import com.stockmaster.entity.Goods;
 import com.stockmaster.entity.Role;
 import com.stockmaster.service.GoodsService;
@@ -13,6 +16,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -199,6 +205,44 @@ public class GoodsController {
             return Result.success(count);
         } catch (Exception e) {
             return Result.error("查询失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 导出货物
+     */
+    @GetMapping("/export")
+    public void exportGoods(
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String name,
+            HttpServletResponse response) throws IOException {
+        try {
+            // 查询数据
+            List<Goods> list = goodsService.getGoodsList(type, name);
+            
+            // 转换为导出DTO
+            List<GoodsExportDTO> exportList = list.stream().map(goods -> {
+                GoodsExportDTO dto = new GoodsExportDTO();
+                BeanUtils.copyProperties(goods, dto);
+                return dto;
+            }).collect(Collectors.toList());
+            
+            // 设置响应头
+            response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+            response.setCharacterEncoding("utf-8");
+            String fileName = URLEncoder.encode("货物列表_" + System.currentTimeMillis(), "UTF-8").replaceAll("\\+", "%20");
+            response.setHeader("Content-disposition", "attachment;filename*=utf-8''" + fileName + ".xlsx");
+            
+            // 写入Excel
+            EasyExcel.write(response.getOutputStream(), GoodsExportDTO.class)
+                    .registerWriteHandler(ExcelStyleConfig.getStyleStrategy())
+                    .sheet("货物列表")
+                    .doWrite(exportList);
+        } catch (Exception e) {
+            response.reset();
+            response.setContentType("application/json");
+            response.setCharacterEncoding("utf-8");
+            response.getWriter().println("{\"code\":500,\"message\":\"导出失败：" + e.getMessage() + "\"}");
         }
     }
 }

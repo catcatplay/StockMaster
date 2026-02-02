@@ -1,8 +1,8 @@
 <template>
   <div class="card-container">
     <div class="toolbar">
-      <el-button type="success" @click="showInboundDialog">新增入库</el-button>
-      <el-button type="primary" @click="handleExport" :loading="exportLoading">导出记录</el-button>
+      <el-button type="success" :icon="Plus" @click="showInboundDialog">新增入库</el-button>
+      <el-button type="primary" :icon="Download" @click="handleExport" :loading="exportLoading">导出记录</el-button>
       <el-date-picker
         v-model="dateRange"
         type="datetimerange"
@@ -163,6 +163,7 @@ import { ElMessage } from 'element-plus'
 import { getInboundList, createInbound, updateSettlement } from '@/api/inbound'
 import { getGoodsList } from '@/api/goods'
 import request from '@/utils/request'
+import {Plus, Download} from "@element-plus/icons-vue";
 
 const route = useRoute()
 const currentType = computed(() => route.meta.type || 'device')

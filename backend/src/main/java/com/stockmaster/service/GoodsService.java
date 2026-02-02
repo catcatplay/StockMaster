@@ -61,4 +61,9 @@ public interface GoodsService extends IService<Goods> {
      * 获取指定类型的货物总剩余库存
      */
     Integer getTotalStock(String type);
+
+    /**
+     * 查询货物列表（用于导出）
+     */
+    List<Goods> getGoodsList(String type, String name);
 }

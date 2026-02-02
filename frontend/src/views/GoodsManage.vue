@@ -2,7 +2,8 @@
   <div class="card-container">
     <div class="toolbar">
       <div class="toolbar-left">
-        <el-button v-if="!isOutboundStaff" type="primary" :icon="Plus" @click="showAddDialog">添加货物</el-button>
+        <el-button v-if="!isOutboundStaff" type="success" :icon="Plus" @click="showAddDialog">添加货物</el-button>
+        <el-button type="primary" :icon="Download" @click="handleExport" :loading="exportLoading">导出记录</el-button>
         <span class="stock-count-text">所有货物库存总数：<span class="count-number">{{ totalStockCount }}</span></span>
       </div>
       <div class="search-area">
@@ -95,8 +96,9 @@
 import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Plus } from '@element-plus/icons-vue'
+import { Search, Plus, Download } from '@element-plus/icons-vue'
 import { getGoodsList, addGoods, updateGoods, deleteGoods, getGoodsStockCount } from '@/api/goods'
+import request from '@/utils/request'
 
 const route = useRoute()
 const currentType = computed(() => route.meta.type || 'device')
@@ -105,6 +107,7 @@ const currentType = computed(() => route.meta.type || 'device')
 const goodsList = ref([])
 const searchName = ref('')
 const loading = ref(false)
+const exportLoading = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref(null)
@@ -142,6 +145,47 @@ const isOutboundStaff = computed(() => {
   }
   return false
 })
+
+// 导出
+const handleExport = async () => {
+  exportLoading.value = true
+  try {
+    let url = '/goods/export'
+    const params = []
+    params.push(`type=${encodeURIComponent(currentType.value)}`)
+    
+    if (searchName.value) {
+      params.push(`name=${encodeURIComponent(searchName.value)}`)
+    }
+    
+    if (params.length > 0) {
+      url += '?' + params.join('&')
+    }
+    
+    const response = await request({
+      url: url,
+      method: 'get',
+      responseType: 'blob'
+    })
+    
+    const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+    const downloadUrl = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = downloadUrl
+    link.download = `货物列表_${Date.now()}.xlsx`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(downloadUrl)
+    
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('导出失败', error)
+    ElMessage.error('导出失败')
+  } finally {
+    exportLoading.value = false
+  }
+}
 
 // 获取列表
 const loadGoodsList = async () => {
@@ -304,12 +348,12 @@ onMounted(() => {
 .toolbar-left {
   display: flex;
   align-items: center;
-  gap: 16px;
 }
 
 .stock-count-text {
   font-size: 14px;
   color: #606266;
+  margin-left: 16px;
 }
 
 .count-number {
