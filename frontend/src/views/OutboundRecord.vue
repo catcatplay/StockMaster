@@ -211,7 +211,7 @@ const loadRecordList = async () => {
 const loadGoodsList = async () => {
   try {
     const res = await getGoodsList({ type: currentType.value })
-    goodsList.value = res.data
+    goodsList.value = res.data.filter(g => g.remainingStock > 0)
   } catch (error) {
     console.error('加载货物列表失败', error)
   }

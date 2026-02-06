@@ -82,6 +82,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
     public List<Goods> getGoodsByType(String type) {
         LambdaQueryWrapper<Goods> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Goods::getType, type);
+        wrapper.orderByDesc(Goods::getRemainingStock, Goods::getTotalStock);
         return this.list(wrapper);
     }
 
@@ -139,7 +140,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
         if (name != null && !name.isEmpty()) {
             wrapper.like(Goods::getName, name);
         }
-        wrapper.orderByDesc(Goods::getTotalStock);
+        wrapper.orderByDesc(Goods::getRemainingStock, Goods::getTotalStock);
         return this.page(page, wrapper);
     }
 
@@ -157,7 +158,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
         if (name != null && !name.isEmpty()) {
             wrapper.like(Goods::getName, name);
         }
-        wrapper.orderByDesc(Goods::getTotalStock);
+        wrapper.orderByDesc(Goods::getRemainingStock, Goods::getTotalStock);
         return this.list(wrapper);
     }
 }
