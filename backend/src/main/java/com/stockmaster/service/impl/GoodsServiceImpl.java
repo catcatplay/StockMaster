@@ -89,7 +89,9 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
     @Override
     public List<Goods> searchGoodsByName(String name) {
         LambdaQueryWrapper<Goods> wrapper = new LambdaQueryWrapper<>();
-        wrapper.like(Goods::getName, name);
+        if (name != null && !name.isEmpty()) {
+            wrapper.like(Goods::getName, name);
+        }
         return this.list(wrapper);
     }
 
@@ -132,14 +134,12 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
 
 
     @Override
-    public IPage<Goods> getGoodsPage(Page<Goods> page, String type, String name) {
+    public IPage<Goods> getGoodsPage(Page<Goods> page, String type, String name, String brand, String model) {
         LambdaQueryWrapper<Goods> wrapper = new LambdaQueryWrapper<>();
         if (type != null && !type.isEmpty()) {
             wrapper.eq(Goods::getType, type);
         }
-        if (name != null && !name.isEmpty()) {
-            wrapper.like(Goods::getName, name);
-        }
+        applyFilter(wrapper, name, brand, model);
         wrapper.orderByDesc(Goods::getRemainingStock, Goods::getTotalStock);
         return this.page(page, wrapper);
     }
@@ -150,15 +150,25 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
     }
 
     @Override
-    public List<Goods> getGoodsList(String type, String name) {
+    public List<Goods> getGoodsList(String type, String name, String brand, String model) {
         LambdaQueryWrapper<Goods> wrapper = new LambdaQueryWrapper<>();
         if (type != null && !type.isEmpty()) {
             wrapper.eq(Goods::getType, type);
         }
+        applyFilter(wrapper, name, brand, model);
+        wrapper.orderByDesc(Goods::getRemainingStock, Goods::getTotalStock);
+        return this.list(wrapper);
+    }
+
+    private void applyFilter(LambdaQueryWrapper<Goods> wrapper, String name, String brand, String model) {
         if (name != null && !name.isEmpty()) {
             wrapper.like(Goods::getName, name);
         }
-        wrapper.orderByDesc(Goods::getRemainingStock, Goods::getTotalStock);
-        return this.list(wrapper);
+        if (brand != null && !brand.isEmpty()) {
+            wrapper.like(Goods::getBrand, brand);
+        }
+        if (model != null && !model.isEmpty()) {
+            wrapper.like(Goods::getModel, model);
+        }
     }
 }

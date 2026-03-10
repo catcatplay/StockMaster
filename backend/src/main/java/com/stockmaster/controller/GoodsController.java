@@ -114,10 +114,19 @@ public class GoodsController {
      * 查询所有货物
      */
     @GetMapping("/list")
-    public Result<?> getAllGoods(@RequestParam(required = false) String type, HttpServletRequest request) {
+    public Result<?> getAllGoods(
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) String model,
+            HttpServletRequest request) {
         try {
             List<Goods> list;
-            if (type != null && !type.isEmpty()) {
+            if ((name != null && !name.isEmpty())
+                    || (brand != null && !brand.isEmpty())
+                    || (model != null && !model.isEmpty())) {
+                list = goodsService.getGoodsList(type, name, brand, model);
+            } else if (type != null && !type.isEmpty()) {
                 list = goodsService.getGoodsByType(type);
             } else {
                 list = goodsService.getAllGoods();
@@ -146,10 +155,12 @@ public class GoodsController {
             @RequestParam(defaultValue = "20") Integer size,
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String name,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) String model,
             HttpServletRequest request) {
         try {
             Page<Goods> page = new Page<>(current, size);
-            IPage<Goods> goodsPage = goodsService.getGoodsPage(page, type, name);
+            IPage<Goods> goodsPage = goodsService.getGoodsPage(page, type, name, brand, model);
             
             Map<String, Object> result = new HashMap<>();
             
@@ -215,10 +226,12 @@ public class GoodsController {
     public void exportGoods(
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String name,
+            @RequestParam(required = false) String brand,
+            @RequestParam(required = false) String model,
             HttpServletResponse response) throws IOException {
         try {
             // 查询数据
-            List<Goods> list = goodsService.getGoodsList(type, name);
+            List<Goods> list = goodsService.getGoodsList(type, name, brand, model);
             
             // 转换为导出DTO
             List<GoodsExportDTO> exportList = list.stream().map(goods -> {

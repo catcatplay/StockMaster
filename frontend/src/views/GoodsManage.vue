@@ -19,7 +19,24 @@
             <el-icon><Search /></el-icon>
           </template>
         </el-input>
+        <el-input
+          v-model="searchBrand"
+          placeholder="搜索品牌"
+          class="search-input"
+          clearable
+          @clear="loadGoodsList"
+          @keyup.enter="handleSearch"
+        />
+        <el-input
+          v-model="searchModel"
+          placeholder="搜索型号"
+          class="search-input"
+          clearable
+          @clear="loadGoodsList"
+          @keyup.enter="handleSearch"
+        />
         <el-button type="primary" @click="handleSearch">搜索</el-button>
+        <el-button @click="handleReset">重置</el-button>
       </div>
     </div>
 
@@ -106,6 +123,8 @@ const currentType = computed(() => route.meta.type || 'device')
 // 状态定义
 const goodsList = ref([])
 const searchName = ref('')
+const searchBrand = ref('')
+const searchModel = ref('')
 const loading = ref(false)
 const exportLoading = ref(false)
 const dialogVisible = ref(false)
@@ -157,6 +176,12 @@ const handleExport = async () => {
     if (searchName.value) {
       params.push(`name=${encodeURIComponent(searchName.value)}`)
     }
+    if (searchBrand.value) {
+      params.push(`brand=${encodeURIComponent(searchBrand.value)}`)
+    }
+    if (searchModel.value) {
+      params.push(`model=${encodeURIComponent(searchModel.value)}`)
+    }
     
     if (params.length > 0) {
       url += '?' + params.join('&')
@@ -195,7 +220,9 @@ const loadGoodsList = async () => {
       type: currentType.value,
       current: pagination.currentPage,
       size: pagination.pageSize,
-      name: searchName.value
+      name: searchName.value,
+      brand: searchBrand.value,
+      model: searchModel.value
     })
     if (res.data.records) {
       // 后端分页返回
@@ -227,6 +254,14 @@ const loadStockCount = async () => {
 
 // 搜索
 const handleSearch = () => {
+  pagination.currentPage = 1
+  loadGoodsList()
+}
+
+const handleReset = () => {
+  searchName.value = ''
+  searchBrand.value = ''
+  searchModel.value = ''
   pagination.currentPage = 1
   loadGoodsList()
 }
@@ -364,11 +399,13 @@ onMounted(() => {
 
 .search-area {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 12px;
 }
 
 .search-input {
-  width: 300px;
+  width: 180px;
 }
 
 .pagination-container {
