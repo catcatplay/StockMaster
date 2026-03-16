@@ -1,5 +1,5 @@
 <template>
-  <div class="outbound-record">
+  <div class="card-container outbound-record">
     <div class="toolbar">
       <el-button type="success" :icon="Plus" @click="showOutboundDialog">新增出库</el-button>
       <el-button type="primary" :icon="Download" @click="handleExport" :loading="exportLoading">导出记录</el-button>
@@ -9,7 +9,7 @@
         range-separator="至"
         start-placeholder="开始时间"
         end-placeholder="结束时间"
-        style="margin-left: 10px;"
+        class="toolbar-date-range"
         @change="handleDateChange"
       />
     </div>
@@ -43,7 +43,7 @@
       layout="total, sizes, prev, pager, next, jumper"
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
-      style="margin-top: 20px; justify-content: flex-end;"
+      class="pagination-container"
     />
 
     <!-- 出库对话框 -->
@@ -51,6 +51,7 @@
       v-model="dialogVisible" 
       title="新增出库"
       width="500px"
+      append-to-body
     >
       <el-form :model="outboundForm" :rules="rules" ref="formRef" label-width="100px">
         <el-form-item label="选择货物" prop="goodsId">
@@ -378,11 +379,18 @@ const handleCurrentChange = (val) => {
 
 <style scoped>
 .outbound-record {
-  padding: 20px;
+  min-height: 100%;
 }
 
 .toolbar {
-  display: flex;
-  align-items: center;
+  margin-bottom: 22px;
+}
+
+.toolbar :deep(.el-date-editor) {
+  min-width: 320px;
+}
+
+.toolbar-date-range {
+  min-width: 320px;
 }
 </style>

@@ -9,7 +9,7 @@
         range-separator="至"
         start-placeholder="开始时间"
         end-placeholder="结束时间"
-        style="margin-left: 10px;"
+        class="toolbar-date-range"
         @change="handleDateChange"
       />
     </div>
@@ -56,7 +56,7 @@
       layout="total, sizes, prev, pager, next, jumper"
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
-      style="margin-top: 20px; justify-content: flex-end;"
+      class="pagination-container"
     />
 
     <!-- 入库对话框 -->
@@ -64,6 +64,7 @@
       v-model="dialogVisible" 
       title="新增入库"
       width="500px"
+      append-to-body
     >
       <el-form :model="inboundForm" :rules="rules" ref="formRef" label-width="100px">
         <el-form-item label="选择货物" prop="goodsId">
@@ -127,6 +128,7 @@
       v-model="settlementVisible" 
       title="修改结算状态"
       width="500px"
+      append-to-body
     >
       <el-form :model="settlementForm" ref="settlementFormRef" label-width="100px">
         <el-form-item label="货物名称">
@@ -394,12 +396,15 @@ const handleCurrentChange = (val) => {
 </script>
 
 <style scoped>
-.inbound-record {
-  padding: 20px;
+.toolbar {
+  margin-bottom: 22px;
 }
 
-.toolbar {
-  display: flex;
-  align-items: center;
+.toolbar :deep(.el-date-editor) {
+  min-width: 320px;
+}
+
+.toolbar-date-range {
+  min-width: 320px;
 }
 </style>

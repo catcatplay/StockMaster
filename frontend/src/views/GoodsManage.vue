@@ -63,10 +63,10 @@
           {{ formatDate(scope.row.createTime) }}
         </template>
       </el-table-column>
-      <el-table-column v-if="!isOutboundStaff" label="操作" width="150" fixed="right">
+      <el-table-column v-if="!isOutboundStaff" label="操作" width="200" fixed="right">
         <template #default="scope">
-          <el-button type="primary" link size="small" @click="handleEdit(scope.row)">编辑</el-button>
-          <el-button type="danger" link size="small" @click="handleDelete(scope.row)">删除</el-button>
+          <el-button type="primary" size="small" @click="handleEdit(scope.row)">编辑</el-button>
+          <el-button type="danger" size="small" @click="handleDelete(scope.row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -86,6 +86,7 @@
       v-model="dialogVisible" 
       :title="isEdit ? '编辑货物' : '添加货物'"
       width="500px"
+      append-to-body
       destroy-on-close
     >
       <el-form :model="goodsForm" :rules="rules" ref="formRef" label-width="80px">
@@ -374,42 +375,41 @@ onMounted(() => {
 
 <style scoped>
 .toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   margin-bottom: 24px;
 }
 
 .toolbar-left {
-  display: flex;
-  align-items: center;
+  gap: 14px;
 }
 
 .stock-count-text {
-  font-size: 14px;
-  color: #606266;
-  margin-left: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  height: 40px;
+  font-size: 13px;
+  color: #647694;
+  border-radius: 14px;
+  background: rgba(244, 247, 253, 0.82);
+  box-shadow: inset 0 0 0 1px rgba(208, 218, 236, 0.72);
 }
 
 .count-number {
   font-size: 16px;
-  font-weight: bold;
-  color: #409EFF;
+  font-weight: 700;
+  color: #4b63c5;
 }
 
 .search-area {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
   gap: 12px;
 }
 
 .search-input {
-  width: 180px;
+  width: 200px;
 }
 
 .pagination-container {
   margin-top: 24px;
-  justify-content: flex-end;
 }
 </style>

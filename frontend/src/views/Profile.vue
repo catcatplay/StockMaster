@@ -156,15 +156,31 @@ onMounted(() => {
 
 <style scoped>
 .profile-container {
-  padding: 20px;
-}
-.box-card {
-  max-width: 600px;
+  max-width: 760px;
   margin: 0 auto;
 }
+
+.box-card {
+  max-width: 100%;
+}
+
 .card-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  min-height: 28px;
+}
+
+.card-header span {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1d2a44;
+}
+
+:deep(.el-form) {
+  max-width: 560px;
+}
+
+:deep(.el-form-item:last-child) {
+  margin-bottom: 0;
 }
 </style>
