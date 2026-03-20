@@ -82,8 +82,8 @@
       class="pagination-container"
     />
 
-    <el-dialog 
-      v-model="dialogVisible" 
+    <el-dialog
+      v-model="dialogVisible"
       :title="isEdit ? '编辑货物' : '添加货物'"
       width="500px"
       append-to-body
@@ -111,33 +111,30 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed, watch } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Plus, Download } from '@element-plus/icons-vue'
-import { getGoodsList, addGoods, updateGoods, deleteGoods, getGoodsStockCount } from '@/api/goods'
-import request from '@/utils/request'
+import { addGoods, deleteGoods, exportGoods, getGoodsList, getGoodsStockCount, updateGoods } from '@/api/goods'
+import { useExport } from '@/composables/useExport'
+import { usePagination } from '@/composables/usePagination'
+import { formatDate } from '@/utils/date'
 
 const route = useRoute()
 const currentType = computed(() => route.meta.type || 'device')
 
-// 状态定义
 const goodsList = ref([])
 const searchName = ref('')
 const searchBrand = ref('')
 const searchModel = ref('')
 const loading = ref(false)
-const exportLoading = ref(false)
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref(null)
 const totalStockCount = ref(0)
 
-const pagination = reactive({
-  currentPage: 1,
-  pageSize: 20,
-  total: 0
-})
+const { exportLoading, handleExport: doExport } = useExport()
+const { pagination, handleSizeChange, handleCurrentChange, resetPage } = usePagination(loadGoodsList)
 
 const goodsForm = reactive({
   id: '',
@@ -156,7 +153,6 @@ const rules = {
   model: [{ required: true, message: '请输入型号', trigger: 'blur' }]
 }
 
-// 权限控制
 const isOutboundStaff = computed(() => {
   const userInfoStr = localStorage.getItem('userInfo')
   if (userInfoStr) {
@@ -166,55 +162,16 @@ const isOutboundStaff = computed(() => {
   return false
 })
 
-// 导出
-const handleExport = async () => {
-  exportLoading.value = true
-  try {
-    let url = '/goods/export'
-    const params = []
-    params.push(`type=${encodeURIComponent(currentType.value)}`)
-    
-    if (searchName.value) {
-      params.push(`name=${encodeURIComponent(searchName.value)}`)
-    }
-    if (searchBrand.value) {
-      params.push(`brand=${encodeURIComponent(searchBrand.value)}`)
-    }
-    if (searchModel.value) {
-      params.push(`model=${encodeURIComponent(searchModel.value)}`)
-    }
-    
-    if (params.length > 0) {
-      url += '?' + params.join('&')
-    }
-    
-    const response = await request({
-      url: url,
-      method: 'get',
-      responseType: 'blob'
-    })
-    
-    const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-    const downloadUrl = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = downloadUrl
-    link.download = `货物列表_${Date.now()}.xlsx`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(downloadUrl)
-    
-    ElMessage.success('导出成功')
-  } catch (error) {
-    console.error('导出失败', error)
-    ElMessage.error('导出失败')
-  } finally {
-    exportLoading.value = false
-  }
+async function handleExport() {
+  await doExport(exportGoods, '货物列表', {
+    type: currentType.value,
+    name: searchName.value || undefined,
+    brand: searchBrand.value || undefined,
+    model: searchModel.value || undefined
+  })
 }
 
-// 获取列表
-const loadGoodsList = async () => {
+async function loadGoodsList() {
   loading.value = true
   try {
     const res = await getGoodsList({
@@ -226,11 +183,9 @@ const loadGoodsList = async () => {
       model: searchModel.value
     })
     if (res.data.records) {
-      // 后端分页返回
       goodsList.value = res.data.records
       pagination.total = res.data.total
     } else {
-      // 兼容旧接口
       goodsList.value = res.data
       pagination.total = res.data.length
     }
@@ -241,8 +196,7 @@ const loadGoodsList = async () => {
   }
 }
 
-// 获取总库存数量
-const loadStockCount = async () => {
+async function loadStockCount() {
   try {
     const res = await getGoodsStockCount(currentType.value)
     if (res.code === 200) {
@@ -253,55 +207,38 @@ const loadStockCount = async () => {
   }
 }
 
-// 搜索
-const handleSearch = () => {
-  pagination.currentPage = 1
+function handleSearch() {
+  resetPage()
   loadGoodsList()
 }
 
-const handleReset = () => {
+function handleReset() {
   searchName.value = ''
   searchBrand.value = ''
   searchModel.value = ''
-  pagination.currentPage = 1
+  resetPage()
   loadGoodsList()
 }
 
-// 分页
-const handleSizeChange = (val) => {
-  pagination.pageSize = val
-  pagination.currentPage = 1
-  loadGoodsList()
-}
-
-const handleCurrentChange = (val) => {
-  pagination.currentPage = val
-  loadGoodsList()
-}
-
-// 监听路由变化，重新加载数据
 watch(() => route.path, () => {
-  pagination.currentPage = 1
+  resetPage()
   loadGoodsList()
   loadStockCount()
 }, { immediate: true })
 
-// 添加
-const showAddDialog = () => {
+function showAddDialog() {
   isEdit.value = false
   resetForm()
   dialogVisible.value = true
 }
 
-// 编辑
-const handleEdit = (row) => {
+function handleEdit(row) {
   isEdit.value = true
   Object.assign(goodsForm, row)
   dialogVisible.value = true
 }
 
-// 删除
-const handleDelete = (row) => {
+function handleDelete(row) {
   ElMessageBox.confirm('确认删除该货物吗？', '警告', {
     type: 'warning',
     confirmButtonText: '删除',
@@ -317,23 +254,21 @@ const handleDelete = (row) => {
         ElMessage.error(res.msg || '删除失败')
       }
     } catch (error) {
-      // error
+      // ignore
     }
   })
 }
 
-// 提交表单
-const handleSubmit = async () => {
+async function handleSubmit() {
   if (!formRef.value) return
-  
+
   await formRef.value.validate(async (valid) => {
     if (valid) {
       try {
         const api = isEdit.value ? updateGoods : addGoods
-        // 确保传入type
         const payload = { ...goodsForm, type: currentType.value }
         const res = await api(payload)
-        
+
         if (res.code === 200) {
           ElMessage.success(isEdit.value ? '更新成功' : '添加成功')
           dialogVisible.value = false
@@ -343,14 +278,13 @@ const handleSubmit = async () => {
           ElMessage.error(res.msg || '操作失败')
         }
       } catch (error) {
-        // error
+        // ignore
       }
     }
   })
 }
 
-// 重置表单
-const resetForm = () => {
+function resetForm() {
   goodsForm.id = ''
   goodsForm.name = ''
   goodsForm.brand = ''
@@ -360,17 +294,6 @@ const resetForm = () => {
   goodsForm.remainingStock = 0
   goodsForm.totalStock = 0
 }
-
-// 日期格式化
-const formatDate = (time) => {
-  if (!time) return '-'
-  return new Date(time).toLocaleString()
-}
-
-onMounted(() => {
-  // watch会自动加载，无需重复调用
-  // loadGoodsList()
-})
 </script>
 
 <style scoped>

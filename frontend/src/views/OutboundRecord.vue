@@ -15,7 +15,6 @@
     </div>
 
     <el-table :data="recordList" stripe style="margin-top: 20px; width: 100%">
-<!--      <el-table-column prop="id" label="ID" width="80" />-->
       <el-table-column prop="goodsName" label="货物名称" min-width="100" show-overflow-tooltip />
       <el-table-column prop="brand" label="品牌" min-width="100" show-overflow-tooltip />
       <el-table-column prop="model" label="型号" min-width="150" show-overflow-tooltip />
@@ -34,7 +33,6 @@
       </el-table-column>
     </el-table>
 
-    <!-- 分页组件 -->
     <el-pagination
       v-model:current-page="pagination.currentPage"
       v-model:page-size="pagination.pageSize"
@@ -46,17 +44,16 @@
       class="pagination-container"
     />
 
-    <!-- 出库对话框 -->
-    <el-dialog 
-      v-model="dialogVisible" 
+    <el-dialog
+      v-model="dialogVisible"
       title="新增出库"
       width="500px"
       append-to-body
     >
       <el-form :model="outboundForm" :rules="rules" ref="formRef" label-width="100px">
         <el-form-item label="选择货物" prop="goodsId">
-          <el-select 
-            v-model="outboundForm.goodsId" 
+          <el-select
+            v-model="outboundForm.goodsId"
             placeholder="请选择货物"
             style="width: 100%;"
             filterable
@@ -81,9 +78,9 @@
           </el-tag>
         </el-form-item>
         <el-form-item label="出库数量" prop="quantity">
-          <el-input-number 
-            v-model="outboundForm.quantity" 
-            :min="1" 
+          <el-input-number
+            v-model="outboundForm.quantity"
+            :min="1"
             :max="currentStock > 0 ? currentStock : 1"
             :disabled="currentStock <= 0"
             style="width: 100%;"
@@ -91,8 +88,8 @@
           />
         </el-form-item>
         <el-form-item label="使用部门" prop="department">
-          <el-input 
-            v-model="outboundForm.department" 
+          <el-input
+            v-model="outboundForm.department"
             placeholder="请输入使用部门"
             style="width: 100%;"
           />
@@ -108,8 +105,8 @@
           />
         </el-form-item>
         <el-form-item label="备注">
-          <el-input 
-            v-model="outboundForm.remark" 
+          <el-input
+            v-model="outboundForm.remark"
             type="textarea"
             :rows="3"
             placeholder="请输入备注信息（可选）"
@@ -125,13 +122,15 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getOutboundList, createOutbound } from '@/api/outbound'
+import { Download, Plus } from '@element-plus/icons-vue'
 import { getGoodsList } from '@/api/goods'
-import request from '@/utils/request'
-import {Plus, Download} from "@element-plus/icons-vue";
+import { createOutbound, exportOutboundRecords, getOutboundList } from '@/api/outbound'
+import { useExport } from '@/composables/useExport'
+import { usePagination } from '@/composables/usePagination'
+import { formatDate, formatDateForApi } from '@/utils/date'
 
 const route = useRoute()
 const currentType = computed(() => route.meta.type || 'device')
@@ -142,14 +141,9 @@ const dateRange = ref([])
 const dialogVisible = ref(false)
 const formRef = ref(null)
 const currentStock = ref(0)
-const exportLoading = ref(false)
 
-// 分页参数
-const pagination = ref({
-  currentPage: 1,
-  pageSize: 20,
-  total: 0
-})
+const { exportLoading, handleExport: doExport } = useExport()
+const { pagination, handleSizeChange, handleCurrentChange, resetPage } = usePagination(loadRecordList)
 
 const outboundForm = ref({
   goodsId: null,
@@ -164,7 +158,7 @@ const rules = {
   goodsId: [{ required: true, message: '请选择货物', trigger: 'change' }],
   quantity: [
     { required: true, message: '请输入出库数量', trigger: 'blur' },
-    { 
+    {
       validator: (rule, value, callback) => {
         if (value <= 0) {
           callback(new Error('出库数量必须大于0'))
@@ -173,20 +167,20 @@ const rules = {
         } else {
           callback()
         }
-      }, 
-      trigger: 'change' 
+      },
+      trigger: 'change'
     }
   ],
   department: [{ required: true, message: '请输入使用部门', trigger: 'blur' }],
   outboundTime: [{ required: true, message: '请选择出库时间', trigger: 'change' }]
 }
 
-const loadRecordList = async () => {
+async function loadRecordList() {
   try {
     const params = {
       type: currentType.value,
-      current: pagination.value.currentPage,
-      size: pagination.value.pageSize
+      current: pagination.currentPage,
+      size: pagination.pageSize
     }
 
     if (dateRange.value && dateRange.value.length === 2) {
@@ -196,20 +190,18 @@ const loadRecordList = async () => {
 
     const res = await getOutboundList(params)
     if (res.data.records) {
-      // 后端分页返回
       recordList.value = res.data.records
-      pagination.value.total = res.data.total
+      pagination.total = res.data.total
     } else {
-      // 兼容旧接口
       recordList.value = res.data
-      pagination.value.total = res.data.length
+      pagination.total = res.data.length
     }
   } catch (error) {
     console.error('加载出库记录失败', error)
   }
 }
 
-const loadGoodsList = async () => {
+async function loadGoodsList() {
   try {
     const res = await getGoodsList({ type: currentType.value })
     goodsList.value = res.data.filter(g => g.remainingStock > 0)
@@ -218,19 +210,18 @@ const loadGoodsList = async () => {
   }
 }
 
-// 监听路由变化，重新加载数据
 watch(() => route.path, () => {
-  pagination.value.currentPage = 1
+  resetPage()
   loadRecordList()
   loadGoodsList()
 }, { immediate: true })
 
-const handleDateChange = async () => {
-  pagination.value.currentPage = 1
+function handleDateChange() {
+  resetPage()
   loadRecordList()
 }
 
-const showOutboundDialog = () => {
+function showOutboundDialog() {
   outboundForm.value = {
     goodsId: null,
     quantity: 1,
@@ -241,48 +232,43 @@ const showOutboundDialog = () => {
   }
   currentStock.value = 0
   dialogVisible.value = true
-  // 重置表单验证
   if (formRef.value) {
     formRef.value.clearValidate()
   }
 }
 
-const handleGoodsChange = (goodsId) => {
+function handleGoodsChange(goodsId) {
   const goods = goodsList.value.find(g => g.id === goodsId)
   if (goods) {
     currentStock.value = goods.remainingStock
-    // 如果当前数量超过库存，重置为1
     if (outboundForm.value.quantity > goods.remainingStock) {
       outboundForm.value.quantity = 1
     }
-    // 触发数量字段的验证
     if (formRef.value) {
       formRef.value.validateField('quantity')
     }
   }
 }
 
-const handleQuantityChange = () => {
-  // 触发数量字段的验证
+function handleQuantityChange() {
   if (formRef.value) {
     formRef.value.validateField('quantity')
   }
 }
 
-const handleSubmit = async () => {
+async function handleSubmit() {
   if (!formRef.value) return
-  
-  // 验证库存
+
   if (outboundForm.value.quantity > currentStock.value) {
     ElMessage.error(`出库数量不能超过库存数量(${currentStock.value})`)
     return
   }
-  
+
   if (currentStock.value <= 0) {
     ElMessage.error('当前库存不足，无法出库')
     return
   }
-  
+
   await formRef.value.validate(async (valid) => {
     if (valid) {
       try {
@@ -290,7 +276,7 @@ const handleSubmit = async () => {
         ElMessage.success('出库成功')
         dialogVisible.value = false
         loadRecordList()
-        loadGoodsList() // 刷新货物列表以更新库存
+        loadGoodsList()
       } catch (error) {
         console.error('出库失败', error)
       }
@@ -298,82 +284,15 @@ const handleSubmit = async () => {
   })
 }
 
-const formatDate = (date) => {
-  if (!date) return ''
-  const d = new Date(date)
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  const hour = String(d.getHours()).padStart(2, '0')
-  const minute = String(d.getMinutes()).padStart(2, '0')
-  const second = String(d.getSeconds()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hour}:${minute}:${second}`
-}
-
-const formatDateForApi = (date) => {
-  const d = new Date(date)
-  const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  const hour = String(d.getHours()).padStart(2, '0')
-  const minute = String(d.getMinutes()).padStart(2, '0')
-  const second = String(d.getSeconds()).padStart(2, '0')
-  return `${year}-${month}-${day} ${hour}:${minute}:${second}`
-}
-
-const handleExport = async () => {
-  exportLoading.value = true
-  try {
-    let url = '/outbound/export'
-    const params = []
-    // 添加type参数
-    params.push(`type=${encodeURIComponent(currentType.value)}`)
-    if (dateRange.value && dateRange.value.length === 2) {
-      const startTime = formatDateForApi(dateRange.value[0])
-      const endTime = formatDateForApi(dateRange.value[1])
-      params.push(`startTime=${encodeURIComponent(startTime)}`)
-      params.push(`endTime=${encodeURIComponent(endTime)}`)
-    }
-    if (params.length > 0) {
-      url += '?' + params.join('&')
-    }
-    
-    // 使用axios发起请求，获取blob数据
-    const response = await request({
-      url: url,
-      method: 'get',
-      responseType: 'blob'
-    })
-    
-    // 创建下载链接
-    const blob = new Blob([response], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-    const downloadUrl = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = downloadUrl
-    link.download = `出库记录_${Date.now()}.xlsx`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(downloadUrl)
-    
-    ElMessage.success('导出成功')
-  } catch (error) {
-    console.error('导出失败', error)
-    ElMessage.error('导出失败')
-  } finally {
-    exportLoading.value = false
+async function handleExport() {
+  const params = {
+    type: currentType.value
   }
-}
-
-const handleSizeChange = (val) => {
-  pagination.value.pageSize = val
-  pagination.value.currentPage = 1
-  loadRecordList()
-}
-
-const handleCurrentChange = (val) => {
-  pagination.value.currentPage = val
-  loadRecordList()
+  if (dateRange.value && dateRange.value.length === 2) {
+    params.startTime = formatDateForApi(dateRange.value[0])
+    params.endTime = formatDateForApi(dateRange.value[1])
+  }
+  await doExport(exportOutboundRecords, '出库记录', params)
 }
 </script>
 

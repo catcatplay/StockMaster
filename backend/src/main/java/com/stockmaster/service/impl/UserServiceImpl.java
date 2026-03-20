@@ -7,7 +7,8 @@ import com.stockmaster.entity.User;
 import com.stockmaster.mapper.RoleMapper;
 import com.stockmaster.mapper.UserMapper;
 import com.stockmaster.service.UserService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -22,7 +23,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Resource
     private RoleMapper roleMapper;
     
-    private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @Override
     public User login(String username, String password) {
@@ -34,7 +36,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (user == null) {
             return null;
         }
-        System.out.println(passwordEncoder.encode("admin123"));
         // 验证密码
         if (passwordEncoder.matches(password, user.getPassword())) {
             // 查询角色信息

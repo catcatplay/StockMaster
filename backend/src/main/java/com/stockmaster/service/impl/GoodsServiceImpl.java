@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.stockmaster.entity.Goods;
 import com.stockmaster.entity.InboundRecord;
 import com.stockmaster.entity.OutboundRecord;
+import com.stockmaster.exception.BusinessException;
 import com.stockmaster.mapper.GoodsMapper;
 import com.stockmaster.mapper.InboundRecordMapper;
 import com.stockmaster.mapper.OutboundRecordMapper;
@@ -54,7 +55,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
         inboundWrapper.eq(InboundRecord::getGoodsId, id);
         Integer inboundCount = inboundRecordMapper.selectCount(inboundWrapper);
         if (inboundCount > 0) {
-            throw new RuntimeException("该货物存在入库记录，不允许删除");
+            throw new BusinessException("该货物存在入库记录，不允许删除");
         }
 
         // 校验是否存在出库记录
@@ -62,7 +63,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
         outboundWrapper.eq(OutboundRecord::getGoodsId, id);
         Integer outboundCount = outboundRecordMapper.selectCount(outboundWrapper);
         if (outboundCount > 0) {
-            throw new RuntimeException("该货物存在出库记录，不允许删除");
+            throw new BusinessException("该货物存在出库记录，不允许删除");
         }
 
         return this.removeById(id);
@@ -110,7 +111,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
 
             // 出库校验
             if (quantity < 0 && newRemaining < 0) {
-                throw new RuntimeException("库存不足，无法出库");
+                throw new BusinessException("库存不足，无法出库");
             }
 
             LambdaUpdateWrapper<Goods> wrapper = new LambdaUpdateWrapper<>();
@@ -129,7 +130,7 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
             }
         }
 
-        throw new RuntimeException("系统繁忙，库存更新失败，请重试");
+        throw new BusinessException("系统繁忙，库存更新失败，请重试");
     }
 
 

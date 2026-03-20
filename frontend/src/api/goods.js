@@ -48,3 +48,12 @@ export function getGoodsStockCount(type) {
     params: { type }
   })
 }
+
+export function exportGoods(params) {
+  return request({
+    url: '/goods/export',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}

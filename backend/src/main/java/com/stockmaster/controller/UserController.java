@@ -6,7 +6,7 @@ import com.stockmaster.common.Result;
 import com.stockmaster.entity.User;
 import com.stockmaster.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -18,7 +18,8 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    private BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     @GetMapping("/list")
     public Result list(@RequestParam(defaultValue = "1") Integer page,

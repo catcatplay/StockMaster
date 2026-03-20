@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.stockmaster.entity.Goods;
 import com.stockmaster.entity.OutboundRecord;
+import com.stockmaster.exception.BusinessException;
 import com.stockmaster.mapper.OutboundRecordMapper;
 import com.stockmaster.service.GoodsService;
 import com.stockmaster.service.OutboundRecordService;
@@ -31,12 +32,12 @@ public class OutboundRecordServiceImpl extends ServiceImpl<OutboundRecordMapper,
         // 查询货物信息
         Goods goods = goodsService.getGoodsById(record.getGoodsId());
         if (goods == null) {
-            throw new RuntimeException("货物不存在");
+            throw new BusinessException("货物不存在");
         }
         
         // 检查库存是否充足
         if (goods.getRemainingStock() < record.getQuantity()) {
-            throw new RuntimeException("库存不足，当前剩余库存：" + goods.getRemainingStock());
+            throw new BusinessException("库存不足，当前剩余库存：" + goods.getRemainingStock());
         }
         
         // 填充货物信息

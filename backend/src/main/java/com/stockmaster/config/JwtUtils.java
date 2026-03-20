@@ -56,6 +56,13 @@ public class JwtUtils {
         return claims != null ? claims.getSubject() : null;
     }
 
+    public String getUsernameFromAuthorizationHeader(String authorizationHeader) {
+        if (authorizationHeader == null || !authorizationHeader.startsWith("Bearer ")) {
+            return null;
+        }
+        return getUsernameFromToken(authorizationHeader.substring(7));
+    }
+
     /**
      * 从token中获取用户ID
      */

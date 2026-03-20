@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.stockmaster.entity.Goods;
 import com.stockmaster.entity.InboundRecord;
+import com.stockmaster.exception.BusinessException;
 import com.stockmaster.mapper.InboundRecordMapper;
 import com.stockmaster.service.GoodsService;
 import com.stockmaster.service.InboundRecordService;
@@ -47,7 +48,7 @@ public class InboundRecordServiceImpl extends ServiceImpl<InboundRecordMapper, I
         // 查询货物信息
         Goods goods = goodsService.getGoodsById(record.getGoodsId());
         if (goods == null) {
-            throw new RuntimeException("货物不存在");
+            throw new BusinessException("货物不存在");
         }
         
         // 填充货物信息
@@ -108,7 +109,7 @@ public class InboundRecordServiceImpl extends ServiceImpl<InboundRecordMapper, I
     public boolean updateSettlementStatus(Long id, String settlementStatus, String remark) {
         InboundRecord record = this.getById(id);
         if (record == null) {
-            throw new RuntimeException("入库记录不存在");
+            throw new BusinessException("入库记录不存在");
         }
         record.setSettlementStatus(settlementStatus);
         if (remark != null && !remark.isEmpty()) {

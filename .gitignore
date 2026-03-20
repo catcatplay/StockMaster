@@ -100,3 +100,4 @@ Desktop.ini
 *.dll
 *.so
 *.dylib
+.claude/

@@ -39,3 +39,12 @@ export function getTotalQuantity(goodsId) {
     method: 'get'
   })
 }
+
+export function exportOutboundRecords(params) {
+  return request({
+    url: '/outbound/export',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}

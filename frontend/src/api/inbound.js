@@ -40,3 +40,12 @@ export function updateSettlement(data) {
     data
   })
 }
+
+export function exportInboundRecords(params) {
+  return request({
+    url: '/inbound/export',
+    method: 'get',
+    params,
+    responseType: 'blob'
+  })
+}
