@@ -1,15 +1,18 @@
 package com.stockmaster.controller;
 
 import com.stockmaster.common.Result;
+import com.stockmaster.config.CaptchaConfig;
 import com.stockmaster.config.JwtUtils;
 import com.stockmaster.dto.LoginRequest;
 import com.stockmaster.dto.LoginResponse;
 import com.stockmaster.entity.Role;
 import com.stockmaster.entity.User;
+import com.stockmaster.service.CaffeineCaptchaStore;
 import com.stockmaster.service.RoleService;
 import com.stockmaster.service.UserService;
 import com.stockmaster.util.PermissionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -28,8 +31,22 @@ public class LoginController {
     @Autowired
     private JwtUtils jwtUtils;
 
+    @Autowired
+    private CaptchaConfig captchaConfig;
+
+    @Autowired
+    private CaffeineCaptchaStore captchaStore;
+
     @PostMapping("/login")
     public Result login(@RequestBody LoginRequest request) {
+        if (captchaConfig.isEnabled()) {
+            if (!StringUtils.hasText(request.getCaptchaKey()) || !StringUtils.hasText(request.getCaptchaCode())) {
+                return Result.error("验证码不能为空");
+            }
+            if (!captchaStore.validateAndDelete(request.getCaptchaKey(), request.getCaptchaCode())) {
+                return Result.error("验证码错误或已过期");
+            }
+        }
         User user = userService.login(request.getUsername(), request.getPassword());
         if (user == null) {
             return Result.error("用户名或密码错误");

@@ -83,6 +83,32 @@
             </div>
           </el-form-item>
 
+          <el-form-item v-if="captchaEnabled" prop="captchaCode">
+            <div class="input-wrapper captcha-wrapper">
+              <el-input
+                v-model="loginForm.captchaCode"
+                placeholder="验证码"
+                class="glass-input captcha-input"
+                @keyup.enter="handleLogin"
+              />
+              <button
+                type="button"
+                class="captcha-refresh"
+                aria-label="刷新验证码"
+                :disabled="captchaLoading"
+                @click="loadCaptcha({ silent: false })"
+              >
+                <span v-if="!captchaImage" class="captcha-placeholder">点击重试</span>
+                <img
+                  v-else
+                  :src="captchaImage"
+                  class="captcha-img"
+                  alt="登录验证码，点击刷新"
+                />
+              </button>
+            </div>
+          </el-form-item>
+
           <el-form-item class="submit-item">
             <button type="button" class="gradient-btn" :disabled="loading" @click="handleLogin">
               <span class="btn-glow"></span>
@@ -105,7 +131,7 @@ import { onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock, Box, Check } from '@element-plus/icons-vue'
-import { login } from '../api/auth'
+import { login, getCaptcha } from '../api/auth'
 
 const router = useRouter()
 const loginFormRef = ref(null)
@@ -118,14 +144,72 @@ const features = [
   '多维度数据分析'
 ]
 
+const captchaEnabled = ref(false)
+const captchaImage = ref('')
+const captchaKey = ref('')
+const captchaLoading = ref(false)
+const captchaUnavailable = ref(false)
+
+const applyCaptchaState = (data = {}) => {
+  const enabled = Boolean(data.enabled)
+  captchaEnabled.value = enabled
+  captchaUnavailable.value = false
+
+  if (!enabled) {
+    captchaImage.value = ''
+    captchaKey.value = ''
+    loginForm.captchaCode = ''
+    return
+  }
+
+  captchaKey.value = data.captchaKey || ''
+  captchaImage.value = data.captchaImage ? `data:image/png;base64,${data.captchaImage}` : ''
+}
+
+const markCaptchaUnavailable = (showMessage = true) => {
+  captchaEnabled.value = true
+  captchaImage.value = ''
+  captchaKey.value = ''
+  loginForm.captchaCode = ''
+  captchaUnavailable.value = true
+  if (showMessage) {
+    ElMessage.error('验证码加载失败，请刷新后重试')
+  }
+}
+
+const loadCaptcha = async ({ silent = true } = {}) => {
+  captchaLoading.value = true
+  try {
+    const res = await getCaptcha()
+    applyCaptchaState(res.data)
+  } catch (e) {
+    markCaptchaUnavailable(!silent)
+  } finally {
+    captchaLoading.value = false
+  }
+}
+
 const loginForm = reactive({
   username: '',
-  password: ''
+  password: '',
+  captchaCode: ''
 })
 
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  captchaCode: [{
+    validator: (rule, value, callback) => {
+      if (captchaEnabled.value && captchaUnavailable.value) {
+        callback(new Error('验证码加载失败，请刷新后重试'))
+      } else if (captchaEnabled.value && !value?.trim()) {
+        callback(new Error('请输入验证码'))
+      } else {
+        callback()
+      }
+    },
+    trigger: 'blur'
+  }]
 }
 
 let animationId = null
@@ -283,34 +367,51 @@ const initParticles = () => {
   animate()
 }
 
+const refreshCaptchaAfterLoginError = async (message) => {
+  const isCaptchaError = typeof message === 'string' && message.includes('验证码')
+  if (!captchaEnabled.value && !isCaptchaError) return
+
+  loginForm.captchaCode = ''
+  await loadCaptcha({ silent: isCaptchaError ? false : true })
+}
+
 const handleLogin = async () => {
   if (!loginFormRef.value) return
 
   await loginFormRef.value.validate(async (valid) => {
     if (!valid) return
 
+    if (captchaEnabled.value && (captchaUnavailable.value || !captchaKey.value || !captchaImage.value)) {
+      ElMessage.error('验证码加载失败，请刷新后重试')
+      await loadCaptcha({ silent: false })
+      return
+    }
+
     loading.value = true
     try {
-      const res = await login(loginForm)
-      if (res.code === 200) {
-        localStorage.setItem('token', res.data.token)
-        localStorage.setItem('userInfo', JSON.stringify(res.data))
+      const payload = {
+        username: loginForm.username,
+        password: loginForm.password,
+        captchaKey: captchaKey.value || undefined,
+        captchaCode: loginForm.captchaCode || undefined
+      }
+      const res = await login(payload)
+      localStorage.setItem('token', res.data.token)
+      localStorage.setItem('userInfo', JSON.stringify(res.data))
 
-        ElMessage.success('登录成功')
+      ElMessage.success('登录成功')
 
-        const roleCode = res.data.roleName
-        if (roleCode === '入库员') {
-          router.push('/device/inbound')
-        } else if (roleCode === '出库员' || roleCode === '销售') {
-          router.push('/device/outbound')
-        } else {
-          router.push('/device/goods')
-        }
+      const roleCode = res.data.roleName
+      if (roleCode === '入库员') {
+        router.push('/device/inbound')
+      } else if (roleCode === '出库员' || roleCode === '销售') {
+        router.push('/device/outbound')
       } else {
-        ElMessage.error(res.msg || '登录失败')
+        router.push('/device/goods')
       }
     } catch (error) {
-      // 错误由拦截器或全局消息处理
+      const message = error?.response?.data?.message || error?.response?.data?.msg || error?.message
+      await refreshCaptchaAfterLoginError(message)
     } finally {
       loading.value = false
     }
@@ -319,6 +420,7 @@ const handleLogin = async () => {
 
 onMounted(() => {
   initParticles()
+  loadCaptcha()
 })
 
 onUnmounted(() => {
@@ -975,6 +1077,65 @@ onUnmounted(() => {
   position: relative;
   z-index: 1;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.captcha-wrapper {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.captcha-input {
+  flex: 1;
+}
+
+.captcha-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  border-radius: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.captcha-refresh:disabled {
+  cursor: wait;
+}
+
+.captcha-refresh:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 3px;
+}
+
+.captcha-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 110px;
+  height: 48px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(247, 250, 255, 0.9);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.captcha-img {
+  display: block;
+  height: 48px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  transition: opacity 0.2s;
+}
+
+.captcha-refresh:hover .captcha-img {
+  opacity: 0.85;
 }
 
 .form-footer {

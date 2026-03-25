@@ -20,3 +20,10 @@ mybatis-plus:
       id-type: auto
       logic-delete-value: 1
       logic-not-delete-value: 0
+
+captcha:
+  enabled: true
+  type: arithmetic
+  width: 130
+  height: 48
+  length: 4

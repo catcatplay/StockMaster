@@ -22,3 +22,10 @@ export const register = (data) => {
     data
   })
 }
+
+export const getCaptcha = () => {
+  return request({
+    url: '/api/auth/captcha',
+    method: 'get'
+  })
+}
