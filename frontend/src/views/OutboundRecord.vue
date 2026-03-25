@@ -3,7 +3,24 @@
     <div class="toolbar">
       <el-button type="success" :icon="Plus" @click="showOutboundDialog">新增出库</el-button>
       <el-button type="primary" :icon="Download" @click="handleExport" :loading="exportLoading">导出记录</el-button>
+      <div v-if="isMobile" class="toolbar-date-range-mobile">
+        <el-date-picker
+          v-model="mobileStartTime"
+          type="datetime"
+          placeholder="开始时间"
+          value-format="YYYY-MM-DD HH:mm:ss"
+          class="toolbar-date-range-mobile__field"
+        />
+        <el-date-picker
+          v-model="mobileEndTime"
+          type="datetime"
+          placeholder="结束时间"
+          value-format="YYYY-MM-DD HH:mm:ss"
+          class="toolbar-date-range-mobile__field"
+        />
+      </div>
       <el-date-picker
+        v-else
         v-model="dateRange"
         type="datetimerange"
         range-separator="至"
@@ -14,31 +31,34 @@
       />
     </div>
 
-    <el-table :data="recordList" stripe style="margin-top: 20px; width: 100%">
-      <el-table-column prop="goodsName" label="货物名称" min-width="100" show-overflow-tooltip />
-      <el-table-column prop="brand" label="品牌" min-width="100" show-overflow-tooltip />
-      <el-table-column prop="model" label="型号" min-width="150" show-overflow-tooltip />
-      <el-table-column prop="quantity" label="出库数量" width="120">
-        <template #default="scope">
-          <el-tag type="warning">{{ scope.row.quantity }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="department" label="使用部门" width="150" />
-      <el-table-column prop="outboundUser" label="出库人" width="120" />
-      <el-table-column prop="remark" label="备注" />
-      <el-table-column prop="outboundTime" label="出库时间" width="180">
-        <template #default="scope">
-          {{ formatDate(scope.row.outboundTime) }}
-        </template>
-      </el-table-column>
-    </el-table>
+    <div class="table-scroll">
+      <el-table :data="recordList" stripe style="margin-top: 20px; width: 100%">
+        <el-table-column type="index" label="序号" width="80" :index="tableIndex" />
+        <el-table-column prop="goodsName" label="货物名称" min-width="100" show-overflow-tooltip />
+        <el-table-column prop="brand" label="品牌" min-width="100" show-overflow-tooltip />
+        <el-table-column prop="model" label="型号" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="quantity" label="出库数量" width="120">
+          <template #default="scope">
+            <el-tag type="warning">{{ scope.row.quantity }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="department" label="使用部门" width="150" />
+        <el-table-column prop="outboundUser" label="出库人" width="120" />
+        <el-table-column prop="remark" label="备注" />
+        <el-table-column prop="outboundTime" label="出库时间" width="180">
+          <template #default="scope">
+            {{ formatDate(scope.row.outboundTime) }}
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
     <el-pagination
       v-model:current-page="pagination.currentPage"
       v-model:page-size="pagination.pageSize"
       :page-sizes="[10, 20, 50, 100]"
       :total="pagination.total"
-      layout="total, sizes, prev, pager, next, jumper"
+      :layout="paginationLayout"
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
       class="pagination-container"
@@ -47,10 +67,17 @@
     <el-dialog
       v-model="dialogVisible"
       title="新增出库"
-      width="500px"
+      :width="isMobile ? undefined : '500px'"
+      :fullscreen="isMobile"
       append-to-body
     >
-      <el-form :model="outboundForm" :rules="rules" ref="formRef" label-width="100px">
+      <el-form
+        ref="formRef"
+        :model="outboundForm"
+        :rules="rules"
+        :label-width="isMobile ? undefined : '100px'"
+        :label-position="isMobile ? 'top' : 'right'"
+      >
         <el-form-item label="选择货物" prop="goodsId">
           <el-select
             v-model="outboundForm.goodsId"
@@ -65,10 +92,10 @@
               :label="`${item.name} - ${item.brand} - ${item.model}`"
               :value="item.id"
             >
-              <span style="float: left">{{ item.name }} - {{ item.brand }} - {{ item.model }}</span>
-              <span style="float: right; color: #8492a6; font-size: 13px">
-                库存: {{ item.remainingStock }}
-              </span>
+              <div class="goods-option">
+                <span class="goods-option__main">{{ item.name }} - {{ item.brand }} - {{ item.model }}</span>
+                <span class="goods-option__stock">库存: {{ item.remainingStock }}</span>
+              </div>
             </el-option>
           </el-select>
         </el-form-item>
@@ -130,20 +157,26 @@ import { getGoodsList } from '@/api/goods'
 import { createOutbound, exportOutboundRecords, getOutboundList } from '@/api/outbound'
 import { useExport } from '@/composables/useExport'
 import { usePagination } from '@/composables/usePagination'
+import { useViewport } from '@/composables/useViewport'
 import { formatDate, formatDateForApi } from '@/utils/date'
 
 const route = useRoute()
 const currentType = computed(() => route.meta.type || 'device')
+const { isMobile } = useViewport()
+const paginationLayout = computed(() => (isMobile.value ? 'prev, pager, next' : 'total, sizes, prev, pager, next, jumper'))
 
 const recordList = ref([])
 const goodsList = ref([])
 const dateRange = ref([])
+const mobileStartTime = ref('')
+const mobileEndTime = ref('')
 const dialogVisible = ref(false)
 const formRef = ref(null)
 const currentStock = ref(0)
 
 const { exportLoading, handleExport: doExport } = useExport()
 const { pagination, handleSizeChange, handleCurrentChange, resetPage } = usePagination(loadRecordList)
+const tableIndex = (index) => (pagination.currentPage - 1) * pagination.pageSize + index + 1
 
 const outboundForm = ref({
   goodsId: null,
@@ -214,6 +247,28 @@ watch(() => route.path, () => {
   resetPage()
   loadRecordList()
   loadGoodsList()
+}, { immediate: true })
+
+watch([mobileStartTime, mobileEndTime], ([startTime, endTime]) => {
+  if (!isMobile.value) {
+    return
+  }
+
+  if ((startTime && !endTime) || (!startTime && endTime)) {
+    return
+  }
+
+  dateRange.value = startTime && endTime ? [startTime, endTime] : []
+  handleDateChange()
+})
+
+watch(isMobile, (mobile) => {
+  if (!mobile) {
+    mobileStartTime.value = ''
+    mobileEndTime.value = ''
+  } else if (dateRange.value.length === 2) {
+    ;[mobileStartTime.value, mobileEndTime.value] = dateRange.value
+  }
 }, { immediate: true })
 
 function handleDateChange() {
@@ -305,11 +360,59 @@ async function handleExport() {
   margin-bottom: 22px;
 }
 
+.goods-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.goods-option__main,
+.goods-option__stock {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.goods-option__stock {
+  color: #8492a6;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
 .toolbar :deep(.el-date-editor) {
   min-width: 320px;
 }
 
 .toolbar-date-range {
   min-width: 320px;
+}
+
+.toolbar-date-range-mobile {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.toolbar-date-range-mobile__field {
+  width: 100%;
+}
+
+@media (max-width: 767px) {
+  .goods-option {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .goods-option__main,
+  .goods-option__stock {
+    white-space: normal;
+  }
+
+  .toolbar-date-range-mobile {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

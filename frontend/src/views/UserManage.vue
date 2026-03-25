@@ -29,47 +29,93 @@
       </div>
     </div>
 
-    <el-table :data="tableData" stripe style="margin-top: 20px; width: 100%">
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="username" label="用户名" min-width="160" />
-      <el-table-column prop="realName" label="真实姓名" min-width="160" />
-      <el-table-column prop="roleName" label="角色" min-width="140" />
-      <el-table-column prop="status" label="状态" width="100">
-        <template #default="{ row }">
-          <el-tag :type="row.status === 1 ? 'success' : 'danger'">
-            {{ row.status === 1 ? '启用' : '禁用' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="createTime" label="创建时间" min-width="190" />
-      <el-table-column label="操作" width="300" fixed="right">
-        <template #default="{ row }">
-          <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
-          <el-button
-            :type="row.status === 1 ? 'warning' : 'success'"
-            size="small"
-            @click="handleToggleStatus(row)"
-          >
-            {{ row.status === 1 ? '禁用' : '启用' }}
-          </el-button>
-          <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <template v-if="isMobile">
+      <div class="mobile-card-list">
+        <div v-for="row in tableData" :key="row.id" class="mobile-card">
+          <div class="mobile-card__header">
+            <div>
+              <h3 class="mobile-card__title">{{ row.realName || row.username }}</h3>
+              <p class="mobile-card__subtitle">用户名：{{ row.username }}</p>
+            </div>
+            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
+              {{ row.status === 1 ? '启用' : '禁用' }}
+            </el-tag>
+          </div>
+          <div class="mobile-card__content">
+            <div class="mobile-card__row">
+              <span class="mobile-card__label">角色</span>
+              <span class="mobile-card__value">{{ row.roleName || '-' }}</span>
+            </div>
+            <div class="mobile-card__row">
+              <span class="mobile-card__label">创建时间</span>
+              <span class="mobile-card__value">{{ row.createTime || '-' }}</span>
+            </div>
+          </div>
+          <div class="mobile-card__actions">
+            <el-button type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button :type="row.status === 1 ? 'warning' : 'success'" @click="handleToggleStatus(row)">
+              {{ row.status === 1 ? '禁用' : '启用' }}
+            </el-button>
+            <el-button type="danger" @click="handleDelete(row)">删除</el-button>
+          </div>
+        </div>
+      </div>
+    </template>
+    <div v-else class="table-scroll">
+      <el-table :data="tableData" stripe style="margin-top: 20px; width: 100%">
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="username" label="用户名" min-width="160" />
+        <el-table-column prop="realName" label="真实姓名" min-width="160" />
+        <el-table-column prop="roleName" label="角色" min-width="140" />
+        <el-table-column prop="status" label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.status === 1 ? 'success' : 'danger'">
+              {{ row.status === 1 ? '启用' : '禁用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="createTime" label="创建时间" min-width="190" />
+        <el-table-column label="操作" width="300" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+            <el-button
+              :type="row.status === 1 ? 'warning' : 'success'"
+              size="small"
+              @click="handleToggleStatus(row)"
+            >
+              {{ row.status === 1 ? '禁用' : '启用' }}
+            </el-button>
+            <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
     <el-pagination
       v-model:current-page="page"
       v-model:page-size="size"
       :total="total"
       :page-sizes="[10, 20, 50, 100]"
-      layout="total, sizes, prev, pager, next, jumper"
+      :layout="paginationLayout"
       @size-change="loadData"
       @current-change="loadData"
       class="pagination-container"
     />
 
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px" append-to-body>
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="100px">
+    <el-dialog
+      v-model="dialogVisible"
+      :title="dialogTitle"
+      :width="isMobile ? undefined : '600px'"
+      :fullscreen="isMobile"
+      append-to-body
+    >
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="formRules"
+        :label-width="isMobile ? undefined : '100px'"
+        :label-position="isMobile ? 'top' : 'right'"
+      >
         <el-form-item label="用户名" prop="username">
           <el-input v-model="form.username" placeholder="请输入用户名" :disabled="!!form.id" />
         </el-form-item>
@@ -105,14 +151,17 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { computed, ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getUserList, addUser, updateUser, deleteUser, updateUserStatus } from '../api/user'
 import { getAllRoles } from '../api/role'
+import { useViewport } from '@/composables/useViewport'
 
 const searchUsername = ref('')
 const searchRoleId = ref(null)
 const page = ref(1)
+const { isMobile } = useViewport()
+const paginationLayout = computed(() => (isMobile.value ? 'prev, pager, next' : 'total, sizes, prev, pager, next, jumper'))
 const size = ref(10)
 const total = ref(0)
 const tableData = ref([])

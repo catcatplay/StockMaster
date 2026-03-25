@@ -40,43 +40,46 @@
       </div>
     </div>
 
-    <el-table :data="goodsList" stripe style="margin-top: 20px; width: 100%">
-      <el-table-column prop="name" label="货物名称" min-width="100" show-overflow-tooltip />
-      <el-table-column prop="brand" label="品牌" min-width="100" show-overflow-tooltip />
-      <el-table-column prop="model" label="型号" min-width="150" show-overflow-tooltip />
-      <el-table-column prop="totalStock" label="总库存" width="100">
-        <template #default="scope">
-          <el-tag type="info" effect="plain">
-            {{ scope.row.totalStock || 0 }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="remainingStock" label="剩余库存" width="100">
-        <template #default="scope">
-          <el-tag :type="scope.row.remainingStock > 0 ? 'success' : 'danger'" effect="light">
-            {{ scope.row.remainingStock || 0 }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="createTime" label="创建时间" width="180">
-        <template #default="scope">
-          {{ formatDate(scope.row.createTime) }}
-        </template>
-      </el-table-column>
-      <el-table-column v-if="!isOutboundStaff" label="操作" width="200" fixed="right">
-        <template #default="scope">
-          <el-button type="primary" size="small" @click="handleEdit(scope.row)">编辑</el-button>
-          <el-button type="danger" size="small" @click="handleDelete(scope.row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <div class="table-scroll">
+      <el-table :data="goodsList" stripe style="margin-top: 20px; width: 100%">
+        <el-table-column type="index" label="序号" width="80" :index="tableIndex" />
+        <el-table-column prop="name" label="货物名称" min-width="100" show-overflow-tooltip />
+        <el-table-column prop="brand" label="品牌" min-width="100" show-overflow-tooltip />
+        <el-table-column prop="model" label="型号" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="totalStock" label="总库存" width="100">
+          <template #default="scope">
+            <el-tag type="info" effect="plain">
+              {{ scope.row.totalStock || 0 }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="remainingStock" label="剩余库存" width="100">
+          <template #default="scope">
+            <el-tag :type="scope.row.remainingStock > 0 ? 'success' : 'danger'" effect="light">
+              {{ scope.row.remainingStock || 0 }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="createTime" label="创建时间" width="180">
+          <template #default="scope">
+            {{ formatDate(scope.row.createTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column v-if="!isOutboundStaff" label="操作" width="200" :fixed="isMobile ? false : 'right'">
+          <template #default="scope">
+            <el-button type="primary" size="small" @click="handleEdit(scope.row)">编辑</el-button>
+            <el-button type="danger" size="small" @click="handleDelete(scope.row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
     <el-pagination
       v-model:current-page="pagination.currentPage"
       v-model:page-size="pagination.pageSize"
       :page-sizes="[10, 20, 50, 100]"
       :total="pagination.total"
-      layout="total, sizes, prev, pager, next, jumper"
+      :layout="paginationLayout"
       @size-change="handleSizeChange"
       @current-change="handleCurrentChange"
       class="pagination-container"
@@ -85,11 +88,18 @@
     <el-dialog
       v-model="dialogVisible"
       :title="isEdit ? '编辑货物' : '添加货物'"
-      width="500px"
+      :width="isMobile ? undefined : '500px'"
+      :fullscreen="isMobile"
       append-to-body
       destroy-on-close
     >
-      <el-form :model="goodsForm" :rules="rules" ref="formRef" label-width="80px">
+      <el-form
+        ref="formRef"
+        :model="goodsForm"
+        :rules="rules"
+        :label-width="isMobile ? undefined : '80px'"
+        :label-position="isMobile ? 'top' : 'right'"
+      >
         <el-form-item label="货物名称" prop="name">
           <el-input v-model="goodsForm.name" placeholder="请输入货物名称" />
         </el-form-item>
@@ -118,10 +128,13 @@ import { Search, Plus, Download } from '@element-plus/icons-vue'
 import { addGoods, deleteGoods, exportGoods, getGoodsList, getGoodsStockCount, updateGoods } from '@/api/goods'
 import { useExport } from '@/composables/useExport'
 import { usePagination } from '@/composables/usePagination'
+import { useViewport } from '@/composables/useViewport'
 import { formatDate } from '@/utils/date'
 
 const route = useRoute()
 const currentType = computed(() => route.meta.type || 'device')
+const { isMobile } = useViewport()
+const paginationLayout = computed(() => (isMobile.value ? 'prev, pager, next' : 'total, sizes, prev, pager, next, jumper'))
 
 const goodsList = ref([])
 const searchName = ref('')
@@ -135,6 +148,7 @@ const totalStockCount = ref(0)
 
 const { exportLoading, handleExport: doExport } = useExport()
 const { pagination, handleSizeChange, handleCurrentChange, resetPage } = usePagination(loadGoodsList)
+const tableIndex = (index) => (pagination.currentPage - 1) * pagination.pageSize + index + 1
 
 const goodsForm = reactive({
   id: '',

@@ -16,33 +16,73 @@
       </div>
     </div>
 
-    <el-table :data="tableData" stripe style="margin-top: 20px; width: 100%">
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="roleName" label="角色名称" min-width="160" />
-      <el-table-column prop="roleCode" label="角色代码" min-width="190" />
-      <el-table-column prop="description" label="描述" min-width="320" />
-      <el-table-column prop="createTime" label="创建时间" min-width="190" />
-      <el-table-column label="操作" width="220" fixed="right">
-        <template #default="{ row }">
-          <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
-          <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <template v-if="isMobile">
+      <div class="mobile-card-list">
+        <div v-for="row in tableData" :key="row.id" class="mobile-card">
+          <div class="mobile-card__header">
+            <div>
+              <h3 class="mobile-card__title">{{ row.roleName }}</h3>
+              <p class="mobile-card__subtitle">{{ row.roleCode }}</p>
+            </div>
+          </div>
+          <div class="mobile-card__content">
+            <div class="mobile-card__row">
+              <span class="mobile-card__label">描述</span>
+              <span class="mobile-card__value">{{ row.description || '-' }}</span>
+            </div>
+            <div class="mobile-card__row">
+              <span class="mobile-card__label">创建时间</span>
+              <span class="mobile-card__value">{{ row.createTime || '-' }}</span>
+            </div>
+          </div>
+          <div class="mobile-card__actions">
+            <el-button type="primary" @click="handleEdit(row)">编辑</el-button>
+            <el-button type="danger" @click="handleDelete(row)">删除</el-button>
+          </div>
+        </div>
+      </div>
+    </template>
+    <div v-else class="table-scroll">
+      <el-table :data="tableData" stripe style="margin-top: 20px; width: 100%">
+        <el-table-column prop="id" label="ID" width="80" />
+        <el-table-column prop="roleName" label="角色名称" min-width="160" />
+        <el-table-column prop="roleCode" label="角色代码" min-width="190" />
+        <el-table-column prop="description" label="描述" min-width="320" />
+        <el-table-column prop="createTime" label="创建时间" min-width="190" />
+        <el-table-column label="操作" width="220" fixed="right">
+          <template #default="{ row }">
+            <el-button type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
+            <el-button type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
     <el-pagination
       v-model:current-page="page"
       v-model:page-size="size"
       :total="total"
       :page-sizes="[10, 20, 50, 100]"
-      layout="total, sizes, prev, pager, next, jumper"
+      :layout="paginationLayout"
       @size-change="loadData"
       @current-change="loadData"
       class="pagination-container"
     />
 
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px" append-to-body>
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="100px">
+    <el-dialog
+      v-model="dialogVisible"
+      :title="dialogTitle"
+      :width="isMobile ? undefined : '600px'"
+      :fullscreen="isMobile"
+      append-to-body
+    >
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="formRules"
+        :label-width="isMobile ? undefined : '100px'"
+        :label-position="isMobile ? 'top' : 'right'"
+      >
         <el-form-item label="角色名称" prop="roleName">
           <el-input v-model="form.roleName" placeholder="请输入角色名称" />
         </el-form-item>
@@ -73,13 +113,16 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { computed, ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getRoleList, addRole, updateRole, deleteRole } from '../api/role'
+import { useViewport } from '@/composables/useViewport'
 
 const searchName = ref('')
 const page = ref(1)
 const size = ref(10)
+const { isMobile } = useViewport()
+const paginationLayout = computed(() => (isMobile.value ? 'prev, pager, next' : 'total, sizes, prev, pager, next, jumper'))
 const total = ref(0)
 const tableData = ref([])
 
