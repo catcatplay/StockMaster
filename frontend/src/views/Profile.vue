@@ -6,7 +6,13 @@
           <span>个人信息</span>
         </div>
       </template>
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        :label-width="isMobile ? undefined : '100px'"
+        :label-position="isMobile ? 'top' : 'right'"
+      >
         <el-form-item label="用户名" prop="username">
           <el-input v-model="form.username" disabled></el-input>
         </el-form-item>
@@ -23,8 +29,10 @@
           <el-input v-model="form.confirmPassword" type="password" placeholder="请再次输入新密码" show-password></el-input>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="submitForm">保存修改</el-button>
-          <el-button @click="resetForm">重置</el-button>
+          <div class="profile-actions">
+            <el-button type="primary" @click="submitForm">保存修改</el-button>
+            <el-button @click="resetForm">重置</el-button>
+          </div>
         </el-form-item>
       </el-form>
     </el-card>
@@ -35,8 +43,10 @@
 import { ref, onMounted, reactive } from 'vue'
 import { getUserById, updateUser } from '../api/user'
 import { ElMessage } from 'element-plus'
+import { useViewport } from '@/composables/useViewport'
 
 const formRef = ref(null)
+const { isMobile } = useViewport()
 const form = reactive({
   id: null,
   username: '',
@@ -182,5 +192,30 @@ onMounted(() => {
 
 :deep(.el-form-item:last-child) {
   margin-bottom: 0;
+}
+
+.profile-actions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+@media (max-width: 767px) {
+  .profile-container {
+    max-width: 100%;
+  }
+
+  :deep(.el-form) {
+    max-width: 100%;
+  }
+
+  .profile-actions {
+    flex-direction: column-reverse;
+  }
+
+  .profile-actions .el-button {
+    width: 100%;
+    margin: 0;
+  }
 }
 </style>

@@ -5,6 +5,9 @@ import 'element-plus/dist/index.css'
 import './styles/index.css' // 引入全局样式
 import App from './App.vue'
 import router from './router'
+import { initViewport } from './composables/useViewport'
+
+initViewport()
 
 const app = createApp(App)
 

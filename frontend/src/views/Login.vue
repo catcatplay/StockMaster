@@ -1,6 +1,6 @@
 <template>
   <div class="login-wrapper">
-    <canvas ref="particleCanvas" class="particle-canvas"></canvas>
+    <canvas v-if="shouldRenderParticles" ref="particleCanvas" class="particle-canvas"></canvas>
 
     <div class="login-left">
       <div class="grid-overlay"></div>
@@ -127,16 +127,19 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, reactive, ref } from 'vue'
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock, Box, Check } from '@element-plus/icons-vue'
 import { login, getCaptcha } from '../api/auth'
+import { useViewport } from '@/composables/useViewport'
 
 const router = useRouter()
 const loginFormRef = ref(null)
 const particleCanvas = ref(null)
 const loading = ref(false)
+const { isMobile, prefersReducedMotion } = useViewport()
+const shouldRenderParticles = computed(() => !isMobile.value && !prefersReducedMotion.value)
 
 const features = [
   '实时库存监控与预警',
@@ -219,6 +222,23 @@ let mouseX = 0
 let mouseY = 0
 let resizeHandler = null
 let mouseMoveHandler = null
+
+const cleanupParticles = () => {
+  if (animationId) {
+    cancelAnimationFrame(animationId)
+    animationId = null
+  }
+  if (resizeHandler) {
+    window.removeEventListener('resize', resizeHandler)
+    resizeHandler = null
+  }
+  if (mouseMoveHandler) {
+    window.removeEventListener('mousemove', mouseMoveHandler)
+    mouseMoveHandler = null
+  }
+  particles = []
+  glowSpots = []
+}
 
 class Particle {
   constructor(canvas) {
@@ -418,15 +438,19 @@ const handleLogin = async () => {
   })
 }
 
+watch(shouldRenderParticles, (enabled) => {
+  cleanupParticles()
+  if (enabled) {
+    initParticles()
+  }
+}, { immediate: true })
+
 onMounted(() => {
-  initParticles()
   loadCaptcha()
 })
 
 onUnmounted(() => {
-  if (animationId) cancelAnimationFrame(animationId)
-  if (resizeHandler) window.removeEventListener('resize', resizeHandler)
-  if (mouseMoveHandler) window.removeEventListener('mousemove', mouseMoveHandler)
+  cleanupParticles()
 })
 </script>
 
@@ -464,9 +488,10 @@ onUnmounted(() => {
   --field-shadow: 0 12px 30px rgba(12, 20, 48, 0.09);
   --error-soft: rgba(255, 171, 163, 0.92);
   display: flex;
-  height: 100vh;
-  width: 100vw;
-  overflow: hidden;
+  min-height: var(--app-height, 100vh);
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
   background:
     radial-gradient(circle at 18% 24%, rgba(140, 168, 255, 0.16), transparent 32%),
     radial-gradient(circle at 82% 20%, rgba(210, 220, 255, 0.09), transparent 28%),
@@ -1172,18 +1197,51 @@ onUnmounted(() => {
 @media (max-width: 640px) {
   .login-wrapper {
     --radius-panel: 24px;
+    align-items: stretch;
+    padding: 16px 0;
   }
 
   .login-right {
-    padding: 20px;
+    width: 100%;
+    min-height: var(--app-height, 100vh);
+    align-items: flex-start;
+    padding: 16px;
   }
 
   .glass-card {
-    padding: 36px 28px;
+    max-width: none;
+    padding: 28px 20px;
+    border-radius: 24px;
+  }
+
+  .form-header {
+    margin-bottom: 28px;
   }
 
   .form-header h2 {
     font-size: 1.75rem;
+  }
+
+  .captcha-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .captcha-refresh,
+  .captcha-placeholder,
+  .captcha-img {
+    width: 100%;
+  }
+
+  .captcha-placeholder,
+  .captcha-img {
+    min-width: 0;
+    height: 52px;
+    object-fit: cover;
+  }
+
+  .form-footer {
+    margin-top: 28px;
   }
 }
 </style>
