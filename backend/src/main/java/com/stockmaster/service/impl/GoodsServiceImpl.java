@@ -97,13 +97,13 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
     }
 
     @Override
-    public boolean updateStockQuantity(Long id, Integer quantity) {
+    public void updateStockQuantity(Long id, Integer quantity) {
         final int maxRetries = 3;
 
         for (int attempt = 1; attempt <= maxRetries; attempt++) {
             Goods goods = getById(id);
             if (goods == null) {
-                return false;
+                return;
             }
 
             int remaining = goods.getRemainingStock() != null ? goods.getRemainingStock() : 0;
@@ -126,13 +126,43 @@ public class GoodsServiceImpl extends ServiceImpl<GoodsMapper, Goods> implements
             }
 
             if (this.update(wrapper)) {
-                return true;
+                return;
             }
         }
 
         throw new BusinessException("系统繁忙，库存更新失败，请重试");
     }
 
+    @Override
+    public void updateRemainingStockOnly(Long id, Integer quantity) {
+        final int maxRetries = 3;
+
+        for (int attempt = 1; attempt <= maxRetries; attempt++) {
+            Goods goods = getById(id);
+            if (goods == null) {
+                return;
+            }
+
+            int remaining = goods.getRemainingStock() != null ? goods.getRemainingStock() : 0;
+            int newRemaining = remaining + quantity;
+
+            // 校验库存不能为负
+            if (newRemaining < 0) {
+                throw new BusinessException("库存不足，无法操作");
+            }
+
+            LambdaUpdateWrapper<Goods> wrapper = new LambdaUpdateWrapper<>();
+            wrapper.eq(Goods::getId, id)
+                    .eq(Goods::getRemainingStock, goods.getRemainingStock())
+                    .set(Goods::getRemainingStock, newRemaining);
+
+            if (this.update(wrapper)) {
+                return;
+            }
+        }
+
+        throw new BusinessException("系统繁忙，库存更新失败，请重试");
+    }
 
     @Override
     public IPage<Goods> getGoodsPage(Page<Goods> page, String type, String name, String brand, String model) {

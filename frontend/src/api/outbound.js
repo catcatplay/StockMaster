@@ -48,3 +48,10 @@ export function exportOutboundRecords(params) {
     responseType: 'blob'
   })
 }
+
+export function cancelOutbound(id) {
+  return request({
+    url: `/outbound/cancel/${id}`,
+    method: 'delete'
+  })
+}

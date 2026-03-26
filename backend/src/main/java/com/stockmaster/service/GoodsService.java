@@ -50,8 +50,13 @@ public interface GoodsService extends IService<Goods> {
     /**
      * 更新库存数量
      */
-    boolean updateStockQuantity(Long id, Integer quantity);
-    
+    void updateStockQuantity(Long id, Integer quantity);
+
+    /**
+     * 仅更新剩余库存（用于取消出库）
+     */
+    void updateRemainingStockOnly(Long id, Integer quantity);
+
     /**
      * 分页查询货物
      */

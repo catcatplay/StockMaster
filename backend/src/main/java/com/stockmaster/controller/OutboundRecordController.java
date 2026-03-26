@@ -117,4 +117,15 @@ public class OutboundRecordController {
                 .sheet("出库记录")
                 .doWrite(exportList);
     }
+
+    @DeleteMapping("/cancel/{id}")
+    public Result<Boolean> cancelOutboundRecord(@PathVariable Long id, HttpServletRequest request) {
+        Long roleId = (Long) request.getAttribute("roleId");
+        if (roleId == null || roleId != 1) {
+            return Result.error("无权限操作");
+        }
+
+        boolean success = outboundRecordService.cancelOutboundRecord(id);
+        return success ? Result.success("取消出库成功", true) : Result.error("取消出库失败");
+    }
 }

@@ -52,4 +52,9 @@ public interface OutboundRecordService extends IService<OutboundRecord> {
      * 分页查询出库记录
      */
     IPage<OutboundRecord> getRecordsPage(Page<OutboundRecord> page, String type, Date startTime, Date endTime);
+
+    /**
+     * 取消出库记录
+     */
+    boolean cancelOutboundRecord(Long id);
 }

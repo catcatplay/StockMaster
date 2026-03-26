@@ -135,4 +135,24 @@ public class OutboundRecordServiceImpl extends ServiceImpl<OutboundRecordMapper,
         wrapper.orderByDesc(OutboundRecord::getOutboundTime);
         return this.page(page, wrapper);
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean cancelOutboundRecord(Long id) {
+        // 查询出库记录
+        OutboundRecord record = this.getById(id);
+        if (record == null) {
+            throw new BusinessException("出库记录不存在");
+        }
+
+        // 逻辑删除记录
+        boolean removed = this.removeById(id);
+
+        // 恢复库存（仅恢复剩余库存，不影响总库存）
+        if (removed) {
+            goodsService.updateRemainingStockOnly(record.getGoodsId(), record.getQuantity());
+        }
+
+        return removed;
+    }
 }

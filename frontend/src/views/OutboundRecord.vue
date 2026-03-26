@@ -50,6 +50,11 @@
             {{ formatDate(scope.row.outboundTime) }}
           </template>
         </el-table-column>
+        <el-table-column label="操作" width="120" v-if="isAdmin">
+          <template #default="scope">
+            <el-button type="danger" size="small" @click="handleCancel(scope.row)">取消出库</el-button>
+          </template>
+        </el-table-column>
       </el-table>
     </div>
 
@@ -151,10 +156,10 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, Plus } from '@element-plus/icons-vue'
 import { getGoodsList } from '@/api/goods'
-import { createOutbound, exportOutboundRecords, getOutboundList } from '@/api/outbound'
+import { createOutbound, exportOutboundRecords, getOutboundList, cancelOutbound } from '@/api/outbound'
 import { useExport } from '@/composables/useExport'
 import { usePagination } from '@/composables/usePagination'
 import { useViewport } from '@/composables/useViewport'
@@ -164,6 +169,11 @@ const route = useRoute()
 const currentType = computed(() => route.meta.type || 'device')
 const { isMobile } = useViewport()
 const paginationLayout = computed(() => (isMobile.value ? 'prev, pager, next' : 'total, sizes, prev, pager, next, jumper'))
+
+const isAdmin = computed(() => {
+  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}')
+  return userInfo.roleId === 1
+})
 
 const recordList = ref([])
 const goodsList = ref([])
@@ -348,6 +358,29 @@ async function handleExport() {
     params.endTime = formatDateForApi(dateRange.value[1])
   }
   await doExport(exportOutboundRecords, '出库记录', params)
+}
+
+async function handleCancel(row) {
+  try {
+    await ElMessageBox.confirm(
+      `确定要取消出库记录吗？取消后将恢复 ${row.quantity} 件库存到货物"${row.goodsName}"`,
+      '取消出库',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+
+    await cancelOutbound(row.id)
+    ElMessage.success('取消出库成功')
+    loadRecordList()
+    loadGoodsList()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('取消出库失败', error)
+    }
+  }
 }
 </script>
 
