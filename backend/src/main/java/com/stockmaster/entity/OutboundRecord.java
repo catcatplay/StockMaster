@@ -2,6 +2,7 @@ package com.stockmaster.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
@@ -39,4 +40,7 @@ public class OutboundRecord implements Serializable {
     private String remark;
     
     private String outboundUser;
+
+    @TableLogic
+    private Integer deleted;
 }

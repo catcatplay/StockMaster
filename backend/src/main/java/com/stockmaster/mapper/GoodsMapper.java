@@ -10,6 +10,6 @@ import org.apache.ibatis.annotations.Select;
  */
 @Mapper
 public interface GoodsMapper extends BaseMapper<Goods> {
-    @Select("SELECT IFNULL(SUM(total_stock), 0) FROM goods WHERE type = #{type}")
+    @Select("SELECT IFNULL(SUM(total_stock), 0) FROM goods WHERE type = #{type} AND deleted = 0")
     Integer sumTotalStock(String type);
 }
