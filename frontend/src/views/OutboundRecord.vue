@@ -183,6 +183,8 @@ const OUTBOUND_STATUS = {
   CANCELED: 1
 }
 
+const CANCEL_CONFIRM_TEXT = '确认取消出库'
+
 const route = useRoute()
 const currentType = computed(() => route.meta.type || 'device')
 const currentStatus = computed(() => route.meta.outboundStatus)
@@ -393,12 +395,15 @@ async function handleCancel(row) {
       return
     }
 
-    await ElMessageBox.confirm(
-      `确定要取消出库记录吗？取消后将恢复 ${row.quantity} 件库存到货物"${row.goodsName}"`,
+    await ElMessageBox.prompt(
+      `取消后将恢复 ${row.quantity} 件库存到货物“${row.goodsName}”。请输入“${CANCEL_CONFIRM_TEXT}”后继续。`,
       '取消出库',
       {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
+        inputPlaceholder: `请输入：${CANCEL_CONFIRM_TEXT}`,
+        inputPattern: new RegExp(`^${CANCEL_CONFIRM_TEXT}$`),
+        inputErrorMessage: `请输入正确的确认内容：${CANCEL_CONFIRM_TEXT}`,
         type: 'warning'
       }
     )
@@ -410,7 +415,7 @@ async function handleCancel(row) {
       loadGoodsList()
     }
   } catch (error) {
-    if (error !== 'cancel') {
+    if (error !== 'cancel' && error !== 'close') {
       console.error('取消出库失败', error)
     }
   }
