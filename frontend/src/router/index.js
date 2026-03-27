@@ -8,6 +8,11 @@ import RoleManage from '../views/RoleManage.vue'
 import UserManage from '../views/UserManage.vue'
 import Profile from '../views/Profile.vue'
 
+const OUTBOUND_STATUS = {
+  NORMAL: 0,
+  CANCELED: 1
+}
+
 const routes = [
   {
     path: '/login',
@@ -36,7 +41,13 @@ const routes = [
     path: '/device/outbound',
     name: 'DeviceOutbound',
     component: OutboundRecord,
-    meta: { type: 'device', requiresAuth: true, permission: 'outbound' }
+    meta: { type: 'device', requiresAuth: true, permission: 'outbound', outboundStatus: OUTBOUND_STATUS.NORMAL }
+  },
+  {
+    path: '/device/outbound-cancel',
+    name: 'DeviceOutboundCancel',
+    component: OutboundRecord,
+    meta: { type: 'device', requiresAuth: true, permission: 'outbound', outboundStatus: OUTBOUND_STATUS.CANCELED }
   },
   // 耗材类台账
   {
@@ -55,7 +66,13 @@ const routes = [
     path: '/consumable/outbound',
     name: 'ConsumableOutbound',
     component: OutboundRecord,
-    meta: { type: 'consumable', requiresAuth: true, permission: 'outbound' }
+    meta: { type: 'consumable', requiresAuth: true, permission: 'outbound', outboundStatus: OUTBOUND_STATUS.NORMAL }
+  },
+  {
+    path: '/consumable/outbound-cancel',
+    name: 'ConsumableOutboundCancel',
+    component: OutboundRecord,
+    meta: { type: 'consumable', requiresAuth: true, permission: 'outbound', outboundStatus: OUTBOUND_STATUS.CANCELED }
   },
   // 系统管理
   {

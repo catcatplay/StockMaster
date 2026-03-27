@@ -16,7 +16,10 @@ import java.time.LocalDateTime;
 @Data
 @TableName("outbound_record")
 public class OutboundRecord implements Serializable {
-    
+
+    public static final int STATUS_NORMAL = 0;
+    public static final int STATUS_CANCELED = 1;
+
     @TableId(type = IdType.AUTO)
     private Long id;
     
@@ -40,6 +43,11 @@ public class OutboundRecord implements Serializable {
     private String remark;
     
     private String outboundUser;
+
+    private Integer status;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private LocalDateTime cancelTime;
 
     @TableLogic
     private Integer deleted;

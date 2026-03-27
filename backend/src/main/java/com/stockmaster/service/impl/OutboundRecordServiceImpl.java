@@ -26,6 +26,22 @@ public class OutboundRecordServiceImpl extends ServiceImpl<OutboundRecordMapper,
     @Resource
     private GoodsService goodsService;
 
+    private LambdaQueryWrapper<OutboundRecord> buildQueryWrapper(String type, Date startTime, Date endTime, Integer status) {
+        LambdaQueryWrapper<OutboundRecord> wrapper = new LambdaQueryWrapper<>();
+        if (type != null && !type.isEmpty()) {
+            wrapper.eq(OutboundRecord::getType, type);
+        }
+        if (startTime != null) {
+            wrapper.ge(OutboundRecord::getOutboundTime, startTime);
+        }
+        if (endTime != null) {
+            wrapper.le(OutboundRecord::getOutboundTime, endTime);
+        }
+        wrapper.eq(status != null, OutboundRecord::getStatus, status)
+                .orderByDesc(OutboundRecord::getOutboundTime);
+        return wrapper;
+    }
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean createOutboundRecord(OutboundRecord record) {
@@ -46,6 +62,9 @@ public class OutboundRecordServiceImpl extends ServiceImpl<OutboundRecordMapper,
         record.setModel(goods.getModel());
         record.setType(goods.getType());
         
+        record.setStatus(OutboundRecord.STATUS_NORMAL);
+        record.setCancelTime(null);
+
         // 保存出库记录
         boolean saved = this.save(record);
         
@@ -58,18 +77,13 @@ public class OutboundRecordServiceImpl extends ServiceImpl<OutboundRecordMapper,
     }
 
     @Override
-    public List<OutboundRecord> getAllRecords() {
-        LambdaQueryWrapper<OutboundRecord> wrapper = new LambdaQueryWrapper<>();
-        wrapper.orderByDesc(OutboundRecord::getOutboundTime);
-        return this.list(wrapper);
+    public List<OutboundRecord> getAllRecords(Integer status) {
+        return this.list(buildQueryWrapper(null, null, null, status));
     }
 
     @Override
-    public List<OutboundRecord> getRecordsByType(String type) {
-        LambdaQueryWrapper<OutboundRecord> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(OutboundRecord::getType, type)
-               .orderByDesc(OutboundRecord::getOutboundTime);
-        return this.list(wrapper);
+    public List<OutboundRecord> getRecordsByType(String type, Integer status) {
+        return this.list(buildQueryWrapper(type, null, null, status));
     }
 
     @Override
@@ -81,38 +95,20 @@ public class OutboundRecordServiceImpl extends ServiceImpl<OutboundRecordMapper,
     }
 
     @Override
-    public List<OutboundRecord> getRecordsByTimeRange(Date startTime, Date endTime) {
-        LambdaQueryWrapper<OutboundRecord> wrapper = new LambdaQueryWrapper<>();
-        if (startTime != null) {
-            wrapper.ge(OutboundRecord::getOutboundTime, startTime);
-        }
-        if (endTime != null) {
-            wrapper.le(OutboundRecord::getOutboundTime, endTime);
-        }
-        wrapper.orderByDesc(OutboundRecord::getOutboundTime);
-        return this.list(wrapper);
+    public List<OutboundRecord> getRecordsByTimeRange(Date startTime, Date endTime, Integer status) {
+        return this.list(buildQueryWrapper(null, startTime, endTime, status));
     }
 
     @Override
-    public List<OutboundRecord> getRecordsList(String type, Date startTime, Date endTime) {
-        LambdaQueryWrapper<OutboundRecord> wrapper = new LambdaQueryWrapper<>();
-        if (type != null && !type.isEmpty()) {
-            wrapper.eq(OutboundRecord::getType, type);
-        }
-        if (startTime != null) {
-            wrapper.ge(OutboundRecord::getOutboundTime, startTime);
-        }
-        if (endTime != null) {
-            wrapper.le(OutboundRecord::getOutboundTime, endTime);
-        }
-        wrapper.orderByDesc(OutboundRecord::getOutboundTime);
-        return this.list(wrapper);
+    public List<OutboundRecord> getRecordsList(String type, Date startTime, Date endTime, Integer status) {
+        return this.list(buildQueryWrapper(type, startTime, endTime, status));
     }
 
     @Override
     public Integer getTotalOutboundQuantityByGoodsId(Long goodsId) {
         LambdaQueryWrapper<OutboundRecord> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(OutboundRecord::getGoodsId, goodsId);
+        wrapper.eq(OutboundRecord::getGoodsId, goodsId)
+                .eq(OutboundRecord::getStatus, OutboundRecord.STATUS_NORMAL);
         List<OutboundRecord> records = this.list(wrapper);
         
         return records.stream()
@@ -121,19 +117,8 @@ public class OutboundRecordServiceImpl extends ServiceImpl<OutboundRecordMapper,
     }
     
     @Override
-    public IPage<OutboundRecord> getRecordsPage(Page<OutboundRecord> page, String type, Date startTime, Date endTime) {
-        LambdaQueryWrapper<OutboundRecord> wrapper = new LambdaQueryWrapper<>();
-        if (type != null && !type.isEmpty()) {
-            wrapper.eq(OutboundRecord::getType, type);
-        }
-        if (startTime != null) {
-            wrapper.ge(OutboundRecord::getOutboundTime, startTime);
-        }
-        if (endTime != null) {
-            wrapper.le(OutboundRecord::getOutboundTime, endTime);
-        }
-        wrapper.orderByDesc(OutboundRecord::getOutboundTime);
-        return this.page(page, wrapper);
+    public IPage<OutboundRecord> getRecordsPage(Page<OutboundRecord> page, String type, Date startTime, Date endTime, Integer status) {
+        return this.page(page, buildQueryWrapper(type, startTime, endTime, status));
     }
 
     @Override
@@ -145,14 +130,25 @@ public class OutboundRecordServiceImpl extends ServiceImpl<OutboundRecordMapper,
             throw new BusinessException("出库记录不存在");
         }
 
-        // 逻辑删除记录
-        boolean removed = this.removeById(id);
-
-        // 恢复库存（仅恢复剩余库存，不影响总库存）
-        if (removed) {
-            goodsService.updateRemainingStockOnly(record.getGoodsId(), record.getQuantity());
+        if (Integer.valueOf(OutboundRecord.STATUS_CANCELED).equals(record.getStatus())) {
+            throw new BusinessException("该出库记录已取消，请勿重复操作");
         }
 
-        return removed;
+        record.setStatus(OutboundRecord.STATUS_CANCELED);
+        record.setCancelTime(java.time.LocalDateTime.now());
+        boolean updated = this.lambdaUpdate()
+                .eq(OutboundRecord::getId, id)
+                .eq(OutboundRecord::getStatus, OutboundRecord.STATUS_NORMAL)
+                .set(OutboundRecord::getStatus, OutboundRecord.STATUS_CANCELED)
+                .set(OutboundRecord::getCancelTime, record.getCancelTime())
+                .update();
+
+        if (!updated) {
+            throw new BusinessException("该出库记录已取消，请勿重复操作");
+        }
+
+        // 恢复库存（仅恢复剩余库存，不影响总库存）
+        goodsService.updateRemainingStockOnly(record.getGoodsId(), record.getQuantity());
+        return true;
     }
 }

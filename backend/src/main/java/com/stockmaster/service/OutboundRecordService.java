@@ -21,12 +21,12 @@ public interface OutboundRecordService extends IService<OutboundRecord> {
     /**
      * 查询所有出库记录
      */
-    List<OutboundRecord> getAllRecords();
+    List<OutboundRecord> getAllRecords(Integer status);
     
     /**
      * 根据类型查询出库记录
      */
-    List<OutboundRecord> getRecordsByType(String type);
+    List<OutboundRecord> getRecordsByType(String type, Integer status);
     
     /**
      * 根据货物ID查询出库记录
@@ -36,12 +36,12 @@ public interface OutboundRecordService extends IService<OutboundRecord> {
     /**
      * 根据时间范围查询出库记录
      */
-    List<OutboundRecord> getRecordsByTimeRange(Date startTime, Date endTime);
+    List<OutboundRecord> getRecordsByTimeRange(Date startTime, Date endTime, Integer status);
     
     /**
      * 根据条件查询出库记录列表
      */
-    List<OutboundRecord> getRecordsList(String type, Date startTime, Date endTime);
+    List<OutboundRecord> getRecordsList(String type, Date startTime, Date endTime, Integer status);
     
     /**
      * 统计货物总出库量
@@ -51,7 +51,7 @@ public interface OutboundRecordService extends IService<OutboundRecord> {
     /**
      * 分页查询出库记录
      */
-    IPage<OutboundRecord> getRecordsPage(Page<OutboundRecord> page, String type, Date startTime, Date endTime);
+    IPage<OutboundRecord> getRecordsPage(Page<OutboundRecord> page, String type, Date startTime, Date endTime, Integer status);
 
     /**
      * 取消出库记录

@@ -44,9 +44,18 @@ public class OutboundRecordExportDTO {
     @ExcelProperty(value = "备注", index = 6)
     @ColumnWidth(30)
     private String remark;
-    
-    @ExcelProperty(value = "出库时间", index = 7)
+
+    @ExcelProperty(value = "状态", index = 7)
+    @ColumnWidth(12)
+    private String statusText;
+
+    @ExcelProperty(value = "出库时间", index = 8)
     @DateTimeFormat("yyyy-MM-dd HH:mm:ss")
     @ColumnWidth(20)
     private LocalDateTime outboundTime;
+
+    @ExcelProperty(value = "取消时间", index = 9)
+    @DateTimeFormat("yyyy-MM-dd HH:mm:ss")
+    @ColumnWidth(20)
+    private LocalDateTime cancelTime;
 }

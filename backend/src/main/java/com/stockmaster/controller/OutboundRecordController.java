@@ -46,12 +46,13 @@ public class OutboundRecordController {
     }
 
     @GetMapping("/list")
-    public Result<List<OutboundRecord>> getAllRecords(@RequestParam(required = false) String type) {
+    public Result<List<OutboundRecord>> getAllRecords(@RequestParam(required = false) String type,
+                                                       @RequestParam(required = false) Integer status) {
         List<OutboundRecord> list;
         if (type != null && !type.isEmpty()) {
-            list = outboundRecordService.getRecordsByType(type);
+            list = outboundRecordService.getRecordsByType(type, status);
         } else {
-            list = outboundRecordService.getAllRecords();
+            list = outboundRecordService.getAllRecords(status);
         }
         return Result.success(list);
     }
@@ -61,10 +62,11 @@ public class OutboundRecordController {
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "20") Integer size,
             @RequestParam(required = false) String type,
+            @RequestParam(required = false) Integer status,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date startTime,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date endTime) {
         Page<OutboundRecord> page = new Page<>(current, size);
-        IPage<OutboundRecord> recordPage = outboundRecordService.getRecordsPage(page, type, startTime, endTime);
+        IPage<OutboundRecord> recordPage = outboundRecordService.getRecordsPage(page, type, startTime, endTime, status);
 
         Map<String, Object> result = new HashMap<>();
         result.put("records", recordPage.getRecords());
@@ -83,8 +85,9 @@ public class OutboundRecordController {
     @GetMapping("/listByTime")
     public Result<List<OutboundRecord>> getRecordsByTimeRange(
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date startTime,
-            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date endTime) {
-        List<OutboundRecord> list = outboundRecordService.getRecordsByTimeRange(startTime, endTime);
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date endTime,
+            @RequestParam(required = false) Integer status) {
+        List<OutboundRecord> list = outboundRecordService.getRecordsByTimeRange(startTime, endTime, status);
         return Result.success(list);
     }
 
@@ -97,13 +100,15 @@ public class OutboundRecordController {
     @GetMapping("/export")
     public void exportRecords(
             @RequestParam(required = false) String type,
+            @RequestParam(required = false) Integer status,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date startTime,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") Date endTime,
             HttpServletResponse response) throws IOException {
-        List<OutboundRecord> records = outboundRecordService.getRecordsList(type, startTime, endTime);
+        List<OutboundRecord> records = outboundRecordService.getRecordsList(type, startTime, endTime, status);
         List<OutboundRecordExportDTO> exportList = records.stream().map(record -> {
             OutboundRecordExportDTO dto = new OutboundRecordExportDTO();
             BeanUtils.copyProperties(record, dto);
+            dto.setStatusText(Integer.valueOf(OutboundRecord.STATUS_CANCELED).equals(record.getStatus()) ? "已取消" : "未取消");
             return dto;
         }).collect(Collectors.toList());
 

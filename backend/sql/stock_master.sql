@@ -77,6 +77,8 @@ CREATE TABLE `outbound_record`  (
   `outbound_time` datetime(0) NULL DEFAULT CURRENT_TIMESTAMP(0) COMMENT '出库时间',
   `remark` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '备注',
   `outbound_user` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci NULL DEFAULT NULL COMMENT '出库人',
+  `status` tinyint(1) NOT NULL DEFAULT 0 COMMENT '状态：0未取消，1已取消',
+  `cancel_time` datetime(0) NULL DEFAULT NULL COMMENT '取消出库时间',
   `deleted` tinyint(1) NOT NULL DEFAULT 0 COMMENT '逻辑删除标记：0未删除，1已删除',
   PRIMARY KEY (`id`) USING BTREE,
   INDEX `idx_goods_id`(`goods_id`) USING BTREE,

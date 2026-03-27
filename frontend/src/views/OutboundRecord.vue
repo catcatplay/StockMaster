@@ -1,7 +1,7 @@
 <template>
   <div class="card-container outbound-record">
     <div class="toolbar">
-      <el-button type="success" :icon="Plus" @click="showOutboundDialog">新增出库</el-button>
+      <el-button v-if="!isCancelPage" type="success" :icon="Plus" @click="showOutboundDialog">新增出库</el-button>
       <el-button type="primary" :icon="Download" @click="handleExport" :loading="exportLoading">导出记录</el-button>
       <div v-if="isMobile" class="toolbar-date-range-mobile">
         <el-date-picker
@@ -50,9 +50,21 @@
             {{ formatDate(scope.row.outboundTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" v-if="isAdmin">
+        <el-table-column prop="cancelTime" label="取消时间" width="180" v-if="isCancelPage">
           <template #default="scope">
-            <el-button type="danger" size="small" @click="handleCancel(scope.row)">取消出库</el-button>
+            {{ scope.row.cancelTime ? formatDate(scope.row.cancelTime) : '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="120" v-if="isAdmin && !isCancelPage">
+          <template #default="scope">
+            <el-button
+              type="danger"
+              size="small"
+              :disabled="scope.row.status === OUTBOUND_STATUS.CANCELED"
+              @click="handleCancel(scope.row)"
+            >
+              取消出库
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -70,6 +82,7 @@
     />
 
     <el-dialog
+      v-if="!isCancelPage"
       v-model="dialogVisible"
       title="新增出库"
       :width="isMobile ? undefined : '500px'"
@@ -165,8 +178,15 @@ import { usePagination } from '@/composables/usePagination'
 import { useViewport } from '@/composables/useViewport'
 import { formatDate, formatDateForApi } from '@/utils/date'
 
+const OUTBOUND_STATUS = {
+  NORMAL: 0,
+  CANCELED: 1
+}
+
 const route = useRoute()
 const currentType = computed(() => route.meta.type || 'device')
+const currentStatus = computed(() => route.meta.outboundStatus)
+const isCancelPage = computed(() => currentStatus.value === OUTBOUND_STATUS.CANCELED)
 const { isMobile } = useViewport()
 const paginationLayout = computed(() => (isMobile.value ? 'prev, pager, next' : 'total, sizes, prev, pager, next, jumper'))
 
@@ -222,6 +242,7 @@ async function loadRecordList() {
   try {
     const params = {
       type: currentType.value,
+      status: currentStatus.value,
       current: pagination.currentPage,
       size: pagination.pageSize
     }
@@ -256,7 +277,11 @@ async function loadGoodsList() {
 watch(() => route.path, () => {
   resetPage()
   loadRecordList()
-  loadGoodsList()
+  if (!isCancelPage.value) {
+    loadGoodsList()
+  } else {
+    goodsList.value = []
+  }
 }, { immediate: true })
 
 watch([mobileStartTime, mobileEndTime], ([startTime, endTime]) => {
@@ -351,7 +376,8 @@ async function handleSubmit() {
 
 async function handleExport() {
   const params = {
-    type: currentType.value
+    type: currentType.value,
+    status: currentStatus.value
   }
   if (dateRange.value && dateRange.value.length === 2) {
     params.startTime = formatDateForApi(dateRange.value[0])
@@ -362,6 +388,11 @@ async function handleExport() {
 
 async function handleCancel(row) {
   try {
+    if (row.status === OUTBOUND_STATUS.CANCELED) {
+      ElMessage.warning('该出库记录已取消，请勿重复操作')
+      return
+    }
+
     await ElMessageBox.confirm(
       `确定要取消出库记录吗？取消后将恢复 ${row.quantity} 件库存到货物"${row.goodsName}"`,
       '取消出库',
@@ -375,7 +406,9 @@ async function handleCancel(row) {
     await cancelOutbound(row.id)
     ElMessage.success('取消出库成功')
     loadRecordList()
-    loadGoodsList()
+    if (!isCancelPage.value) {
+      loadGoodsList()
+    }
   } catch (error) {
     if (error !== 'cancel') {
       console.error('取消出库失败', error)

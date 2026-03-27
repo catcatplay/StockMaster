@@ -156,9 +156,11 @@ const currentRouteTitle = computed(() => {
     '/device/goods': '设备 - 货物管理',
     '/device/inbound': '设备 - 入库记录',
     '/device/outbound': '设备 - 出库记录',
+    '/device/outbound-cancel': '设备 - 出库取消记录',
     '/consumable/goods': '耗材 - 货物管理',
     '/consumable/inbound': '耗材 - 入库记录',
     '/consumable/outbound': '耗材 - 出库记录',
+    '/consumable/outbound-cancel': '耗材 - 出库取消记录',
     '/system/user': '用户管理',
     '/system/role': '角色管理',
     '/profile': '个人信息'
@@ -180,7 +182,8 @@ const menuGroups = computed(() => {
       items: [
         hasPermission('goods') ? { path: '/device/goods', label: '货物管理' } : null,
         hasPermission('inbound') ? { path: '/device/inbound', label: '入库记录' } : null,
-        hasPermission('outbound') ? { path: '/device/outbound', label: '出库记录' } : null
+        hasPermission('outbound') ? { path: '/device/outbound', label: '出库记录' } : null,
+        hasPermission('outbound') ? { path: '/device/outbound-cancel', label: '出库取消记录' } : null
       ].filter(Boolean)
     })
 
@@ -191,7 +194,8 @@ const menuGroups = computed(() => {
       items: [
         hasPermission('goods') ? { path: '/consumable/goods', label: '货物管理' } : null,
         hasPermission('inbound') ? { path: '/consumable/inbound', label: '入库记录' } : null,
-        hasPermission('outbound') ? { path: '/consumable/outbound', label: '出库记录' } : null
+        hasPermission('outbound') ? { path: '/consumable/outbound', label: '出库记录' } : null,
+        hasPermission('outbound') ? { path: '/consumable/outbound-cancel', label: '出库取消记录' } : null
       ].filter(Boolean)
     })
   }
