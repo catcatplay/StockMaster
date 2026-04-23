@@ -20,7 +20,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
             .authorizeRequests()
-            .antMatchers("/api/auth/**").permitAll() // 登录接口允许匿名访问
+            .antMatchers("/auth/**").permitAll() // 登录接口允许匿名访问
             .anyRequest().permitAll(); // 暂时允许所有请求，权限控制在前端和拦截器中实现
     }
 

@@ -51,7 +51,7 @@ public class ExcelStyleConfig {
         contentWriteCellStyle.setWriteFont(contentWriteFont);
         
         // 对齐方式
-        contentWriteCellStyle.setHorizontalAlignment(HorizontalAlignment.LEFT);
+        contentWriteCellStyle.setHorizontalAlignment(HorizontalAlignment.CENTER);
         contentWriteCellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
         
         // 边框

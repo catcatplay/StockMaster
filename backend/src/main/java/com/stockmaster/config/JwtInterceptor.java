@@ -24,7 +24,7 @@ public class JwtInterceptor implements HandlerInterceptor {
 
         // 放行登录和注册接口
         String uri = request.getRequestURI();
-        if (uri.contains("/api/auth/")) {
+        if (uri.contains("/auth/")) {
             return true;
         }
 

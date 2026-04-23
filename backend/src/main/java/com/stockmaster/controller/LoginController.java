@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
 public class LoginController {
 
     @Autowired

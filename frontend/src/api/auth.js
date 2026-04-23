@@ -2,7 +2,7 @@ import request from '../utils/request'
 
 export const login = (data) => {
   return request({
-    url: '/api/auth/login',
+    url: '/auth/login',
     method: 'post',
     data
   })
@@ -10,14 +10,14 @@ export const login = (data) => {
 
 export const getUserInfo = () => {
   return request({
-    url: '/api/auth/info',
+    url: '/auth/info',
     method: 'get'
   })
 }
 
 export const register = (data) => {
   return request({
-    url: '/api/auth/register',
+    url: '/auth/register',
     method: 'post',
     data
   })
@@ -25,7 +25,7 @@ export const register = (data) => {
 
 export const getCaptcha = () => {
   return request({
-    url: '/api/auth/captcha',
+    url: '/auth/captcha',
     method: 'get'
   })
 }
